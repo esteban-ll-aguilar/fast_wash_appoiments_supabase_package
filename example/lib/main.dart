@@ -266,15 +266,22 @@ class _AppointmentDashboardState extends State<AppointmentDashboard> {
 
           _MenuCard(
             icon: Icons.event,
-            title: 'Mis Citas',
-            subtitle: 'Ver y gestionar tus citas',
+            title: isAdmin ? 'Citas de Hoy' : 'Mis Citas',
+            subtitle: isAdmin 
+                ? 'Ver las citas programadas para hoy' 
+                : 'Ver y gestionar tus citas',
             color: Colors.green,
-            onTap: () {
+            onTap: () async {
+              if (isAdmin) {
+                await _appointmentController.loadTodayAppointments();
+              }
+              if (!mounted) return;
               Navigator.push(
                 context,
                 MaterialPageRoute(
                   builder: (context) => AppointmentListPage(
                     controller: _appointmentController,
+                    catalogController: _catalogController,
                     isAdmin: isAdmin,
                   ),
                 ),
@@ -284,7 +291,9 @@ class _AppointmentDashboardState extends State<AppointmentDashboard> {
           _MenuCard(
             icon: Icons.add_circle,
             title: 'Nueva Cita',
-            subtitle: 'Agendar una nueva cita de lavado',
+            subtitle: isAdmin 
+                ? 'Registrar cita para un cliente' 
+                : 'Agendar una nueva cita de lavado',
             color: Colors.blue,
             onTap: () {
               Navigator.push(
@@ -293,6 +302,7 @@ class _AppointmentDashboardState extends State<AppointmentDashboard> {
                   builder: (context) => AppointmentFormPage(
                     appointmentController: _appointmentController,
                     catalogController: _catalogController,
+                    isAdmin: isAdmin,
                   ),
                 ),
               );
@@ -325,6 +335,7 @@ class _AppointmentDashboardState extends State<AppointmentDashboard> {
                   MaterialPageRoute(
                     builder: (context) => AppointmentListPage(
                       controller: _appointmentController,
+                      catalogController: _catalogController,
                       isAdmin: true,
                     ),
                   ),

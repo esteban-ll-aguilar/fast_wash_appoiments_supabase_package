@@ -6,12 +6,16 @@ class AppointmentCard extends StatelessWidget {
   final AppointmentModel appointment;
   final bool isAdmin;
   final VoidCallback? onTap;
+  final VoidCallback? onEdit;
+  final Function(AppointmentStatus)? onStatusChange;
 
   const AppointmentCard({
     Key? key,
     required this.appointment,
     this.isAdmin = false,
     this.onTap,
+    this.onEdit,
+    this.onStatusChange,
   }) : super(key: key);
 
   @override
@@ -121,6 +125,50 @@ class AppointmentCard extends StatelessWidget {
                       appointment.userName!,
                       style: Theme.of(context).textTheme.bodyMedium,
                     ),
+                  ],
+                ),
+              ],
+              // Botones de acción para admin
+              if (isAdmin) ...[
+                const Divider(height: 24),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: [
+                    if (onStatusChange != null)
+                      OutlinedButton.icon(
+                        onPressed: () {
+                          final newStatus = appointment.isPaid
+                              ? AppointmentStatus.UNPAYMENT
+                              : AppointmentStatus.PAYMENT;
+                          onStatusChange!(newStatus);
+                        },
+                        icon: Icon(
+                          appointment.isPaid ? Icons.remove_circle : Icons.check_circle,
+                          size: 18,
+                        ),
+                        label: Text(
+                          appointment.isPaid ? 'Marcar sin pagar' : 'Marcar pagado',
+                          style: const TextStyle(fontSize: 12),
+                        ),
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor: appointment.isPaid ? Colors.orange : Colors.green,
+                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                        ),
+                      ),
+                    if (onEdit != null) ...[
+                      const SizedBox(width: 8),
+                      ElevatedButton.icon(
+                        onPressed: onEdit,
+                        icon: const Icon(Icons.edit, size: 18),
+                        label: const Text(
+                          'Editar',
+                          style: TextStyle(fontSize: 12),
+                        ),
+                        style: ElevatedButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                        ),
+                      ),
+                    ],
                   ],
                 ),
               ],

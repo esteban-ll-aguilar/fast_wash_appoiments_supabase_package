@@ -75,6 +75,34 @@ class AppointmentService {
     }
   }
 
+  /// Obtiene las citas del día actual (para administradores).
+  Future<List<AppointmentModel>> getTodayAppointments() async {
+    try {
+      final today = DateTime.now();
+      final todayStr = today.toIso8601String().split('T')[0];
+      
+      final response = await _client
+          .from('appointment')
+          .select('''
+            *,
+            user:users!appointment_user_dni_fkey(first_name, last_name),
+            washed_type(
+              name,
+              price,
+              vehicle_type(name)
+            )
+          ''')
+          .eq('appointment_date', todayStr)
+          .order('appointment_time', ascending: true);
+
+      return (response as List)
+          .map((json) => AppointmentModel.fromJson(json))
+          .toList();
+    } catch (e) {
+      rethrow;
+    }
+  }
+
   /// Obtiene una cita por su ID.
   Future<AppointmentModel?> getAppointmentById(int id) async {
     try {
@@ -100,12 +128,17 @@ class AppointmentService {
 
   /// Crea una nueva cita.
   /// 
-  /// El DNI del usuario se obtiene automáticamente del usuario actual.
-  /// Retorna [AppointmentModel] creado si es exitoso.
+  /// Si [userDni] no se proporciona, se obtiene del usuario actual.
+  /// Si [status] no se proporciona, se establece como UNPAYMENT.
+  /// 
+  /// Para administradores: pueden especificar [userDni] y [status].
+  /// Para clientes: se usa su propio DNI y estado UNPAYMENT.
   Future<AppointmentModel> createAppointment({
     required int washedTypeId,
     required DateTime appointmentDate,
     required String appointmentTime,
+    String? userDni,
+    AppointmentStatus? status,
   }) async {
     try {
       final user = _client.auth.currentUser;
@@ -113,26 +146,31 @@ class AppointmentService {
         throw Exception('No hay usuario autenticado');
       }
 
-      // Obtener el DNI del usuario actual
-      final userResponse = await _client
-          .from('users')
-          .select('dni')
-          .eq('id', user.id)
-          .single();
-
-      final userDni = userResponse['dni'] as String?;
+      // Si no se proporciona userDni, obtener el del usuario actual
+      String finalUserDni;
       if (userDni == null) {
-        throw Exception('Debe completar su perfil antes de crear una cita');
+        final userResponse = await _client
+            .from('users')
+            .select('dni')
+            .eq('id', user.id)
+            .single();
+
+        finalUserDni = userResponse['dni'];
+        if (finalUserDni.isEmpty) {
+          throw Exception('Debe completar su perfil antes de crear una cita');
+        }
+      } else {
+        finalUserDni = userDni;
       }
 
       final response = await _client
           .from('appointment')
           .insert({
-            'user_dni': userDni,
+            'user_dni': finalUserDni,
             'washed_type_id': washedTypeId,
             'appointment_date': appointmentDate.toIso8601String().split('T')[0],
             'appointment_time': appointmentTime,
-            'status': 'UNPAYMENT',
+            'status': (status ?? AppointmentStatus.UNPAYMENT).name.toUpperCase(),
           })
           .select('''
             *,

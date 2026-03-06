@@ -92,13 +92,43 @@ class AppointmentController extends ChangeNotifier {
     }
   }
 
+  /// Carga las citas del día actual (solo para administradores).
+  Future<bool> loadTodayAppointments() async {
+    try {
+      _status = AppointmentListStatus.loading;
+      _errorMessage = null;
+      notifyListeners();
+
+      _appointments = await _appointmentService.getTodayAppointments();
+
+      if (_appointments.isEmpty) {
+        _status = AppointmentListStatus.empty;
+      } else {
+        _status = AppointmentListStatus.loaded;
+      }
+
+      notifyListeners();
+      return true;
+    } catch (e) {
+      _status = AppointmentListStatus.error;
+      _errorMessage = e.toString();
+      notifyListeners();
+      return false;
+    }
+  }
+
   /// Crea una nueva cita.
+  /// 
+  /// Para administradores: puede especificar [userDni] y [status].
+  /// Para clientes: usa su propio DNI y estado UNPAYMENT.
   /// 
   /// Retorna la cita creada si es exitoso, null en caso contrario.
   Future<AppointmentModel?> createAppointment({
     required int washedTypeId,
     required DateTime appointmentDate,
     required String appointmentTime,
+    String? userDni,
+    AppointmentStatus? status,
   }) async {
     try {
       _errorMessage = null;
@@ -107,6 +137,8 @@ class AppointmentController extends ChangeNotifier {
         washedTypeId: washedTypeId,
         appointmentDate: appointmentDate,
         appointmentTime: appointmentTime,
+        userDni: userDni,
+        status: status,
       );
 
       // Agregar la nueva cita a la lista

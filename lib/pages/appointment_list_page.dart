@@ -1,16 +1,20 @@
 import 'package:flutter/material.dart';
 import '../controllers/appointment_controller.dart';
+import '../controllers/catalog_controller.dart';
 import '../models/appointment_model.dart';
 import '../widgets/appointment_card.dart';
+import 'appointment_form_page.dart';
 
 /// Página que muestra el listado de citas del usuario.
 class AppointmentListPage extends StatefulWidget {
   final AppointmentController controller;
+  final CatalogController? catalogController;
   final bool isAdmin;
 
   const AppointmentListPage({
     Key? key,
     required this.controller,
+    this.catalogController,
     this.isAdmin = false,
   }) : super(key: key);
 
@@ -44,6 +48,78 @@ class _AppointmentListPageState extends State<AppointmentListPage> {
       await _loadAppointments();
     } else {
       await widget.controller.filterByStatus(status);
+    }
+  }
+
+  Future<void> _editAppointment(AppointmentModel appointment) async {
+    if (widget.catalogController == null) return;
+    
+    final result = await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => AppointmentFormPage(
+          appointmentController: widget.controller,
+          catalogController: widget.catalogController!,
+          isAdmin: widget.isAdmin,
+          appointment: appointment,
+        ),
+      ),
+    );
+
+    if (result == true) {
+      await _loadAppointments();
+    }
+  }
+
+  Future<void> _changeAppointmentStatus(
+    AppointmentModel appointment,
+    AppointmentStatus newStatus,
+  ) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('¿Cambiar estado de pago?'),
+        content: Text(
+          'Se cambiará el estado a "${newStatus.displayName}"',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancelar'),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Confirmar'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed != true) return;
+
+    final result = await widget.controller.updateAppointment(
+      id: appointment.id,
+      status: newStatus,
+    );
+
+    if (!mounted) return;
+
+    if (result != null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Estado actualizado exitosamente'),
+          backgroundColor: Colors.green,
+        ),
+      );
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            widget.controller.errorMessage ?? 'Error al actualizar',
+          ),
+          backgroundColor: Colors.red,
+        ),
+      );
     }
   }
 
@@ -159,6 +235,12 @@ class _AppointmentListPageState extends State<AppointmentListPage> {
                   onTap: () {
                     // Navegar a detalle de cita (opcional)
                   },
+                  onEdit: widget.isAdmin && widget.catalogController != null
+                      ? () => _editAppointment(appointment)
+                      : null,
+                  onStatusChange: widget.isAdmin
+                      ? (newStatus) => _changeAppointmentStatus(appointment, newStatus)
+                      : null,
                 );
               },
             ),
