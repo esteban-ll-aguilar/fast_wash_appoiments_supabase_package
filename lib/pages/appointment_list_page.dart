@@ -107,7 +107,7 @@ class _AppointmentListPageState extends State<AppointmentListPage>
     if (status == null) {
       await _loadAppointments();
     } else {
-      await widget.controller.filterByStatus(status);
+      await widget.controller.filterByStatus(status, isAdmin: widget.isAdmin);
     }
   }
 

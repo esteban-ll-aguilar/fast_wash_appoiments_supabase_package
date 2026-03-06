@@ -262,7 +262,7 @@ class AppointmentService {
     }
   }
 
-  /// Filtra citas por estado de pago.
+  /// Filtra citas por estado de pago (todas las citas - solo admin).
   Future<List<AppointmentModel>> getAppointmentsByStatus(AppointmentStatus status) async {
     try {
       final response = await _client
@@ -276,6 +276,50 @@ class AppointmentService {
               vehicle_type(name)
             )
           ''')
+          .eq('status', status.name.toUpperCase())
+          .order('appointment_date', ascending: false)
+          .order('appointment_time', ascending: false);
+
+      return (response as List)
+          .map((json) => AppointmentModel.fromJson(json))
+          .toList();
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  /// Filtra las citas del usuario actual por estado (solo para clientes).
+  Future<List<AppointmentModel>> getCurrentUserAppointmentsByStatus(AppointmentStatus status) async {
+    try {
+      final user = _client.auth.currentUser;
+      if (user == null) {
+        throw Exception('No hay usuario autenticado');
+      }
+
+      // Obtener el DNI del usuario actual
+      final userResponse = await _client
+          .from('users')
+          .select('dni')
+          .eq('id', user.id)
+          .single();
+
+      final userDni = userResponse['dni'] as String?;
+      if (userDni == null) {
+        throw Exception('Usuario no tiene DNI registrado');
+      }
+
+      final response = await _client
+          .from('appointment')
+          .select('''
+            *,
+            user:users!appointment_user_dni_fkey(first_name, last_name),
+            washed_type(
+              name,
+              price,
+              vehicle_type(name)
+            )
+          ''')
+          .eq('user_dni', userDni)
           .eq('status', status.name.toUpperCase())
           .order('appointment_date', ascending: false)
           .order('appointment_time', ascending: false);

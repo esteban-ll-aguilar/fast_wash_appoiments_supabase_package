@@ -191,13 +191,18 @@ class AppointmentController extends ChangeNotifier {
   }
 
   /// Filtra citas por estado de pago.
-  Future<bool> filterByStatus(AppointmentStatus status) async {
+  /// Si [isAdmin] es false, filtra solo las citas del usuario actual.
+  Future<bool> filterByStatus(AppointmentStatus status, {bool isAdmin = false}) async {
     try {
       _status = AppointmentListStatus.loading;
       _errorMessage = null;
       notifyListeners();
 
-      _appointments = await _appointmentService.getAppointmentsByStatus(status);
+      if (isAdmin) {
+        _appointments = await _appointmentService.getAppointmentsByStatus(status);
+      } else {
+        _appointments = await _appointmentService.getCurrentUserAppointmentsByStatus(status);
+      }
 
       if (_appointments.isEmpty) {
         _status = AppointmentListStatus.empty;
