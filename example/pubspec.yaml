@@ -1,0 +1,32 @@
+name: example
+description: Ejemplo de uso del paquete fast_wash_appoiments_supabase_package.
+publish_to: 'none'
+version: 1.0.0+1
+
+environment:
+  sdk: ^3.10.8
+  flutter: ">=1.17.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+  flutter_localizations:
+    sdk: flutter
+  
+  # Packages locales
+  fast_wash_appoiments_supabase_package:
+    path: ../
+  
+  flutter_login_supabase_packcage:
+    path: ../../flutter_login_supabase_packcage
+  
+  # Dependencias necesarias
+  supabase_flutter: ^2.1.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^6.0.0
+
+flutter:
+  uses-material-design: true

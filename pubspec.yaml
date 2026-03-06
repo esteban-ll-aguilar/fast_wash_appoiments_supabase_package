@@ -1,5 +1,5 @@
 name: fast_wash_appoiments_supabase_package
-description: "A new Flutter package project."
+description: "Paquete de gestión de citas para lavado de vehículos con Supabase. Incluye validación de cédula ecuatoriana, gestión de usuarios, y CRUD completo de citas."
 version: 0.0.1
 homepage:
 
@@ -10,6 +10,7 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
+  supabase_flutter: ^2.1.0
 
 dev_dependencies:
   flutter_test:
