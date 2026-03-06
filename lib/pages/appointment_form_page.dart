@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import '../controllers/appointment_controller.dart';
 import '../controllers/catalog_controller.dart';
 import '../models/vehicle_type_model.dart';
@@ -8,7 +9,7 @@ import '../models/user_model.dart';
 import '../services/user_service.dart';
 import '../utils/validators.dart';
 
-/// Página para crear o editar una cita.
+/// Página para crear o editar una cita con diseño profesional.
 class AppointmentFormPage extends StatefulWidget {
   final AppointmentController appointmentController;
   final CatalogController catalogController;
@@ -406,356 +407,769 @@ class _AppointmentFormPageState extends State<AppointmentFormPage> {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    
     return Scaffold(
-      appBar: AppBar(
-        title: Text(_isEditing ? 'Editar Cita' : 'Nueva Cita'),
-        centerTitle: true,
-      ),
-      body: ListenableBuilder(
-        listenable: widget.catalogController,
-        builder: (context, child) {
-          if (widget.catalogController.isLoading) {
-            return const Center(
-              child: CircularProgressIndicator(),
-            );
-          }
-
-          return SingleChildScrollView(
-            padding: const EdgeInsets.all(24),
-            child: Form(
-              key: _formKey,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  // Campo de búsqueda de usuario (solo admin)
-                  if (widget.isAdmin) ...[
-                    Card(
-                      elevation: 2,
-                      child: Padding(
-                        padding: const EdgeInsets.all(16),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              'Datos del Cliente',
-                              style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                            ),
-                            const SizedBox(height: 12),
-                            Row(
-                              children: [
-                                Expanded(
-                                  child: TextFormField(
-                                    controller: _dniController,
-                                    decoration: const InputDecoration(
-                                      labelText: 'DNI del Cliente',
-                                      hintText: '0123456789',
-                                      prefixIcon: Icon(Icons.badge),
-                                      border: OutlineInputBorder(),
-                                    ),
-                                    keyboardType: TextInputType.number,
-                                    maxLength: 10,
-                                    enabled: !_isSearchingUser && !_isEditing, // Deshabilitar en edición
-                                  ),
-                                ),
-                                const SizedBox(width: 8),
-                                ElevatedButton.icon(
-                                  onPressed: (_isSearchingUser || _isEditing) ? null : _searchUserByDni,
-                                  icon: _isSearchingUser
-                                      ? const SizedBox(
-                                          width: 16,
-                                          height: 16,
-                                          child: CircularProgressIndicator(strokeWidth: 2),
-                                        )
-                                      : const Icon(Icons.search),
-                                  label: const Text('Buscar'),
-                                ),
-                              ],
-                            ),
-                            if (_selectedUser != null) ...[
-                              const Divider(),
-                              ListTile(
-                                leading: CircleAvatar(
-                                  backgroundColor: Colors.green,
-                                  child: const Icon(Icons.person, color: Colors.white),
-                                ),
-                                title: Text(_selectedUser!.fullName),
-                                subtitle: Text('DNI: ${_selectedUser!.dni}'),
-                                trailing: IconButton(
-                                  icon: const Icon(Icons.close),
-                                  onPressed: () {
-                                    setState(() {
-                                      _selectedUser = null;
-                                      _dniController.clear();
-                                    });
-                                  },
-                                ),
-                              ),
-                            ],
-                          ],
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-                  ],
-                  
-                  // Verificar si hay datos en el catálogo
-                  if (widget.catalogController.vehicleTypes.isEmpty) ...[
-                    Card(
-                      color: Colors.orange[50],
-                      child: Padding(
-                        padding: const EdgeInsets.all(16),
-                        child: Row(
-                          children: [
-                            Icon(Icons.warning_amber, color: Colors.orange[700], size: 32),
-                            const SizedBox(width: 12),
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    'No hay tipos de vehículo',
-                                    style: TextStyle(
-                                      fontWeight: FontWeight.bold,
-                                      color: Colors.orange[900],
-                                    ),
-                                  ),
-                                  const SizedBox(height: 4),
-                                  const Text(
-                                    'El administrador debe crear tipos de vehículo primero.',
-                                    style: TextStyle(fontSize: 13),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-                  ] else ...[
-                    // Selector de tipo de vehículo
-                    DropdownButtonFormField<VehicleTypeModel>(
-                      value: _selectedVehicleType,
-                      decoration: const InputDecoration(
-                        labelText: 'Tipo de Vehículo',
-                        prefixIcon: Icon(Icons.directions_car),
-                        border: OutlineInputBorder(),
-                      ),
-                      items: widget.catalogController.vehicleTypes
-                          .map((vt) => DropdownMenuItem(
-                                value: vt,
-                                child: Text(vt.name),
-                              ))
-                          .toList(),
-                      onChanged: (value) {
-                        setState(() {
-                          _selectedVehicleType = value;
-                          _selectedWashedType = null; // Reset lavado
-                        });
-                      },
-                      validator: (value) {
-                        if (value == null) {
-                          return 'Selecciona un tipo de vehículo';
-                        }
-                        return null;
-                      },
-                    ),
-                    const SizedBox(height: 16),
-                  ],
-                  
-                  // Selector de tipo de lavado o mensaje de estado vacío
-                  if (_selectedVehicleType != null) ...[
-                    Builder(
-                      builder: (context) {
-                        final washedTypes = widget.catalogController
-                            .getWashedTypesByVehicle(_selectedVehicleType!.id);
-                        
-                        if (washedTypes.isEmpty) {
-                          return Card(
-                            color: Colors.orange[50],
-                            child: Padding(
-                              padding: const EdgeInsets.all(16),
-                              child: Row(
-                                children: [
-                                  Icon(Icons.warning_amber, color: Colors.orange[700], size: 32),
-                                  const SizedBox(width: 12),
-                                  Expanded(
-                                    child: Column(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
-                                      children: [
-                                        Text(
-                                          'No hay tipos de lavado',
-                                          style: TextStyle(
-                                            fontWeight: FontWeight.bold,
-                                            color: Colors.orange[900],
-                                          ),
-                                        ),
-                                        const SizedBox(height: 4),
-                                        Text(
-                                          'No hay lavados disponibles para ${_selectedVehicleType!.name}.',
-                                          style: const TextStyle(fontSize: 13),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          );
-                        }
-                        
-                        return DropdownButtonFormField<WashedTypeModel>(
-                          value: _selectedWashedType,
-                          decoration: const InputDecoration(
-                            labelText: 'Tipo de Lavado',
-                            prefixIcon: Icon(Icons.local_car_wash),
-                            border: OutlineInputBorder(),
-                          ),
-                          items: washedTypes
-                              .map((wt) => DropdownMenuItem(
-                                    value: wt,
-                                    child: Text('${wt.name} - ${wt.formattedPrice}'),
-                                  ))
-                              .toList(),
-                          onChanged: (value) {
-                            setState(() {
-                              _selectedWashedType = value;
-                            });
-                          },
-                          validator: (value) {
-                            if (value == null) {
-                              return 'Selecciona un tipo de lavado';
-                            }
-                            return null;
-                          },
-                        );
-                      },
-                    ),
-                  ] else ...[
-                    Container(
-                      decoration: BoxDecoration(
-                        border: Border.all(color: Colors.grey[300]!),
-                        borderRadius: BorderRadius.circular(4),
-                      ),
-                      padding: const EdgeInsets.all(16),
-                      child: Row(
+      backgroundColor: colorScheme.surface,
+      body: CustomScrollView(
+        slivers: [
+          SliverAppBar(
+            expandedHeight: 120,
+            floating: false,
+            pinned: true,
+            backgroundColor: colorScheme.surface,
+            elevation: 0,
+            flexibleSpace: FlexibleSpaceBar(
+              titlePadding: const EdgeInsets.only(left: 56, bottom: 16),
+              title: Text(
+                _isEditing ? 'Editar Cita' : 'Nueva Cita',
+                style: GoogleFonts.dmSans(
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                  color: colorScheme.onSurface,
+                ),
+              ),
+            ),
+            leading: IconButton(
+              icon: const Icon(Icons.arrow_back_rounded),
+              onPressed: () => Navigator.pop(context),
+            ),
+          ),
+          SliverToBoxAdapter(
+            child: ListenableBuilder(
+              listenable: widget.catalogController,
+              builder: (context, child) {
+                if (widget.catalogController.isLoading) {
+                  return SizedBox(
+                    height: 400,
+                    child: Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          Icon(Icons.info_outline, color: Colors.grey[600]),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: Text(
-                              'Primero selecciona un tipo de vehículo',
-                              style: TextStyle(color: Colors.grey[600]),
+                          CircularProgressIndicator(
+                            strokeWidth: 3,
+                            color: colorScheme.primary,
+                          ),
+                          const SizedBox(height: 16),
+                          Text(
+                            'Cargando opciones...',
+                            style: GoogleFonts.dmSans(
+                              fontSize: 14,
+                              color: colorScheme.onSurfaceVariant,
                             ),
                           ),
                         ],
                       ),
                     ),
+                  );
+                }
+
+                return Padding(
+                  padding: const EdgeInsets.all(20),
+                  child: Form(
+                    key: _formKey,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        if (widget.isAdmin) _buildClientSearchSection(colorScheme),
+                        if (widget.isAdmin) const SizedBox(height: 20),
+                        _buildServiceSelectionSection(colorScheme),
+                        const SizedBox(height: 20),
+                        _buildDateTimeSection(colorScheme),
+                        const SizedBox(height: 20),
+                        if (widget.isAdmin) _buildPaymentStatusSection(colorScheme),
+                        if (widget.isAdmin) const SizedBox(height: 20),
+                        _buildSubmitButton(colorScheme),
+                        const SizedBox(height: 40),
+                      ],
+                    ),
+                  ),
+                );
+              },
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildClientSearchSection(ColorScheme colorScheme) {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: colorScheme.surface,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(
+          color: colorScheme.outlineVariant.withOpacity(0.5),
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.04),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: colorScheme.primaryContainer,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Icon(
+                  Icons.person_search_rounded,
+                  color: colorScheme.primary,
+                  size: 24,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Text(
+                'Datos del Cliente',
+                style: GoogleFonts.dmSans(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: colorScheme.onSurface,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(
+                child: TextFormField(
+                  controller: _dniController,
+                  decoration: InputDecoration(
+                    labelText: 'DNI del Cliente',
+                    labelStyle: GoogleFonts.dmSans(),
+                    hintText: '0123456789',
+                    hintStyle: GoogleFonts.dmSans(
+                      color: colorScheme.onSurfaceVariant.withOpacity(0.5),
+                    ),
+                    prefixIcon: const Icon(Icons.badge_rounded),
+                    filled: true,
+                    fillColor: colorScheme.surfaceVariant.withOpacity(0.5),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(14),
+                      borderSide: BorderSide.none,
+                    ),
+                    counterText: '',
+                  ),
+                  style: GoogleFonts.dmSans(fontSize: 15),
+                  keyboardType: TextInputType.number,
+                  maxLength: 10,
+                  enabled: !_isSearchingUser && !_isEditing,
+                ),
+              ),
+              const SizedBox(width: 12),
+              FilledButton.icon(
+                onPressed: (_isSearchingUser || _isEditing) ? null : _searchUserByDni,
+                icon: _isSearchingUser
+                    ? const SizedBox(
+                        width: 18,
+                        height: 18,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: Colors.white,
+                        ),
+                      )
+                    : const Icon(Icons.search_rounded, size: 20),
+                label: Text(
+                  'Buscar',
+                  style: GoogleFonts.dmSans(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                style: FilledButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                ),
+              ),
+            ],
+          ),
+          if (_selectedUser != null) ...[
+            const SizedBox(height: 16),
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [
+                    Colors.green[50]!,
+                    Colors.green[100]!.withOpacity(0.3),
                   ],
-                  const SizedBox(height: 16),
-                  
-                  // Selector de fecha
-                  InkWell(
-                    onTap: _selectDate,
-                    child: InputDecorator(
-                      decoration: const InputDecoration(
-                        labelText: 'Fecha de la Cita',
-                        prefixIcon: Icon(Icons.calendar_today),
-                        border: OutlineInputBorder(),
+                ),
+                borderRadius: BorderRadius.circular(14),
+                border: Border.all(color: Colors.green[300]!, width: 1.5),
+              ),
+              child: Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        colors: [Colors.green[400]!, Colors.green[600]!],
                       ),
-                      child: Text(
-                        _selectedDate == null
-                            ? 'Seleccionar fecha'
-                            : '${_selectedDate!.day}/${_selectedDate!.month}/${_selectedDate!.year}',
-                      ),
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(
+                      Icons.check_circle_rounded,
+                      color: Colors.white,
+                      size: 24,
                     ),
                   ),
-                  const SizedBox(height: 16),
-                  
-                  // Selector de hora
-                  InkWell(
-                    onTap: _selectTime,
-                    child: InputDecorator(
-                      decoration: const InputDecoration(
-                        labelText: 'Hora de la Cita',
-                        prefixIcon: Icon(Icons.access_time),
-                        border: OutlineInputBorder(),
-                      ),
-                      child: Text(
-                        _selectedTime == null
-                            ? 'Seleccionar hora'
-                            : _selectedTime!.format(context),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  
-                  // Selector de estado de pago (solo admin)
-                  if (widget.isAdmin)
-                    DropdownButtonFormField<AppointmentStatus>(
-                      value: _selectedStatus,
-                      decoration: const InputDecoration(
-                        labelText: 'Estado de Pago',
-                        prefixIcon: Icon(Icons.payment),
-                        border: OutlineInputBorder(),
-                      ),
-                      items: AppointmentStatus.values
-                          .map((status) => DropdownMenuItem(
-                                value: status,
-                                child: Row(
-                                  children: [
-                                    Icon(
-                                      status == AppointmentStatus.PAYMENT
-                                          ? Icons.check_circle
-                                          : Icons.pending,
-                                      color: status == AppointmentStatus.PAYMENT
-                                          ? Colors.green
-                                          : Colors.orange,
-                                      size: 20,
-                                    ),
-                                    const SizedBox(width: 8),
-                                    Text(status.displayName),
-                                  ],
-                                ),
-                              ))
-                          .toList(),
-                      onChanged: (value) {
-                        if (value != null) {
-                          setState(() {
-                            _selectedStatus = value;
-                          });
-                        }
-                      },
-                    ),
-                  const SizedBox(height: 32),
-                  
-                  // Botón de envío
-                  ElevatedButton(
-                    onPressed: _isSubmitting ? null : _handleSubmit,
-                    style: ElevatedButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(vertical: 16),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                    ),
-                    child: _isSubmitting
-                        ? const SizedBox(
-                            height: 20,
-                            width: 20,
-                            child: CircularProgressIndicator(strokeWidth: 2),
-                          )
-                        : Text(
-                            _isEditing ? 'Actualizar Cita' : 'Crear Cita',
-                            style: const TextStyle(fontSize: 16),
+                  const SizedBox(width: 14),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          _selectedUser!.fullName,
+                          style: GoogleFonts.dmSans(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.green[900],
                           ),
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          'DNI: ${_selectedUser!.dni}',
+                          style: GoogleFonts.dmSans(
+                            fontSize: 13,
+                            color: Colors.green[700],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  if (!_isEditing)
+                    IconButton(
+                      icon: const Icon(Icons.close_rounded),
+                      onPressed: () {
+                        setState(() {
+                          _selectedUser = null;
+                          _dniController.clear();
+                        });
+                      },
+                      style: IconButton.styleFrom(
+                        foregroundColor: Colors.green[700],
+                      ),
+                    ),
+                ],
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _buildServiceSelectionSection(ColorScheme colorScheme) {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: colorScheme.surface,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(
+          color: colorScheme.outlineVariant.withOpacity(0.5),
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.04),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: colorScheme.secondaryContainer,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Icon(
+                  Icons.local_car_wash_rounded,
+                  color: colorScheme.secondary,
+                  size: 24,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Text(
+                'Selección de Servicio',
+                style: GoogleFonts.dmSans(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: colorScheme.onSurface,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 20),
+          if (widget.catalogController.vehicleTypes.isEmpty)
+            _buildWarningCard(
+              icon: Icons.warning_amber_rounded,
+              title: 'No hay tipos de vehículo',
+              message: 'El administrador debe crear tipos de vehículo primero.',
+              colorScheme: colorScheme,
+            )
+          else
+            DropdownButtonFormField<VehicleTypeModel>(
+              value: _selectedVehicleType,
+              decoration: InputDecoration(
+                labelText: 'Tipo de Vehículo',
+                labelStyle: GoogleFonts.dmSans(),
+                prefixIcon: const Icon(Icons.directions_car_rounded),
+                filled: true,
+                fillColor: colorScheme.surfaceVariant.withOpacity(0.5),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(14),
+                  borderSide: BorderSide.none,
+                ),
+              ),
+              style: GoogleFonts.dmSans(
+                fontSize: 15,
+                color: colorScheme.onSurface,
+              ),
+              dropdownColor: colorScheme.surface,
+              items: widget.catalogController.vehicleTypes
+                  .map((vt) => DropdownMenuItem(
+                        value: vt,
+                        child: Text(vt.name),
+                      ))
+                  .toList(),
+              onChanged: (value) {
+                setState(() {
+                  _selectedVehicleType = value;
+                  _selectedWashedType = null;
+                });
+              },
+              validator: (value) {
+                if (value == null) return 'Selecciona un tipo de vehículo';
+                return null;
+              },
+            ),
+          const SizedBox(height: 16),
+          if (_selectedVehicleType != null)
+            Builder(
+              builder: (context) {
+                final washedTypes = widget.catalogController
+                    .getWashedTypesByVehicle(_selectedVehicleType!.id);
+
+                if (washedTypes.isEmpty) {
+                  return _buildWarningCard(
+                    icon: Icons.warning_amber_rounded,
+                    title: 'No hay tipos de lavado',
+                    message:
+                        'No hay lavados disponibles para ${_selectedVehicleType!.name}.',
+                    colorScheme: colorScheme,
+                  );
+                }
+
+                return DropdownButtonFormField<WashedTypeModel>(
+                  value: _selectedWashedType,
+                  decoration: InputDecoration(
+                    labelText: 'Tipo de Lavado',
+                    labelStyle: GoogleFonts.dmSans(),
+                    prefixIcon: const Icon(Icons.car_repair_rounded),
+                    filled: true,
+                    fillColor: colorScheme.surfaceVariant.withOpacity(0.5),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(14),
+                      borderSide: BorderSide.none,
+                    ),
+                  ),
+                  style: GoogleFonts.dmSans(
+                    fontSize: 15,
+                    color: colorScheme.onSurface,
+                  ),
+                  dropdownColor: colorScheme.surface,
+                  items: washedTypes
+                      .map((wt) => DropdownMenuItem(
+                            value: wt,
+                            child: Text('${wt.name} - ${wt.formattedPrice}'),
+                          ))
+                      .toList(),
+                  onChanged: (value) {
+                    setState(() {
+                      _selectedWashedType = value;
+                    });
+                  },
+                  validator: (value) {
+                    if (value == null) return 'Selecciona un tipo de lavado';
+                    return null;
+                  },
+                );
+              },
+            )
+          else
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: colorScheme.surfaceVariant.withOpacity(0.3),
+                borderRadius: BorderRadius.circular(14),
+                border: Border.all(
+                  color: colorScheme.outlineVariant.withOpacity(0.5),
+                ),
+              ),
+              child: Row(
+                children: [
+                  Icon(
+                    Icons.info_outline_rounded,
+                    color: colorScheme.onSurfaceVariant,
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Text(
+                      'Primero selecciona un tipo de vehículo',
+                      style: GoogleFonts.dmSans(
+                        color: colorScheme.onSurfaceVariant,
+                        fontSize: 14,
+                      ),
+                    ),
                   ),
                 ],
               ),
             ),
-          );
-        },
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDateTimeSection(ColorScheme colorScheme) {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: colorScheme.surface,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(
+          color: colorScheme.outlineVariant.withOpacity(0.5),
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.04),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: colorScheme.tertiaryContainer,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Icon(
+                  Icons.event_rounded,
+                  color: colorScheme.tertiary,
+                  size: 24,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Text(
+                'Fecha y Hora',
+                style: GoogleFonts.dmSans(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: colorScheme.onSurface,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 20),
+          InkWell(
+            onTap: _selectDate,
+            borderRadius: BorderRadius.circular(14),
+            child: Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: colorScheme.surfaceVariant.withOpacity(0.5),
+                borderRadius: BorderRadius.circular(14),
+              ),
+              child: Row(
+                children: [
+                  Icon(
+                    Icons.calendar_today_rounded,
+                    color: colorScheme.primary,
+                  ),
+                  const SizedBox(width: 14),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Fecha de la Cita',
+                          style: GoogleFonts.dmSans(
+                            fontSize: 12,
+                            color: colorScheme.onSurfaceVariant,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          _selectedDate == null
+                              ? 'Seleccionar fecha'
+                              : '${_selectedDate!.day}/${_selectedDate!.month}/${_selectedDate!.year}',
+                          style: GoogleFonts.dmSans(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                            color: _selectedDate == null
+                                ? colorScheme.onSurfaceVariant.withOpacity(0.6)
+                                : colorScheme.onSurface,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  Icon(
+                    Icons.arrow_forward_ios_rounded,
+                    size: 16,
+                    color: colorScheme.onSurfaceVariant,
+                  ),
+                ],
+              ),
+            ),
+          ),
+          const SizedBox(height: 12),
+          InkWell(
+            onTap: _selectTime,
+            borderRadius: BorderRadius.circular(14),
+            child: Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: colorScheme.surfaceVariant.withOpacity(0.5),
+                borderRadius: BorderRadius.circular(14),
+              ),
+              child: Row(
+                children: [
+                  Icon(
+                    Icons.access_time_rounded,
+                    color: colorScheme.primary,
+                  ),
+                  const SizedBox(width: 14),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Hora de la Cita',
+                          style: GoogleFonts.dmSans(
+                            fontSize: 12,
+                            color: colorScheme.onSurfaceVariant,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          _selectedTime == null
+                              ? 'Seleccionar hora'
+                              : _selectedTime!.format(context),
+                          style: GoogleFonts.dmSans(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                            color: _selectedTime == null
+                                ? colorScheme.onSurfaceVariant.withOpacity(0.6)
+                                : colorScheme.onSurface,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  Icon(
+                    Icons.arrow_forward_ios_rounded,
+                    size: 16,
+                    color: colorScheme.onSurfaceVariant,
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildPaymentStatusSection(ColorScheme colorScheme) {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: colorScheme.surface,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(
+          color: colorScheme.outlineVariant.withOpacity(0.5),
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.04),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: Colors.green[50],
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Icon(
+                  Icons.payments_rounded,
+                  color: Colors.green[700],
+                  size: 24,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Text(
+                'Estado de Pago',
+                style: GoogleFonts.dmSans(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: colorScheme.onSurface,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          DropdownButtonFormField<AppointmentStatus>(
+            value: _selectedStatus,
+            decoration: InputDecoration(
+              labelText: 'Estado',
+              labelStyle: GoogleFonts.dmSans(),
+              prefixIcon: const Icon(Icons.payment_rounded),
+              filled: true,
+              fillColor: colorScheme.surfaceVariant.withOpacity(0.5),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(14),
+                borderSide: BorderSide.none,
+              ),
+            ),
+            style: GoogleFonts.dmSans(
+              fontSize: 15,
+              color: colorScheme.onSurface,
+            ),
+            dropdownColor: colorScheme.surface,
+            items: AppointmentStatus.values
+                .map((status) => DropdownMenuItem(
+                      value: status,
+                      child: Row(
+                        children: [
+                          Icon(
+                            status == AppointmentStatus.PAYMENT
+                                ? Icons.check_circle_rounded
+                                : Icons.pending_rounded,
+                            color: status == AppointmentStatus.PAYMENT
+                                ? Colors.green
+                                : Colors.orange,
+                            size: 20,
+                          ),
+                          const SizedBox(width: 10),
+                          Text(status.displayName),
+                        ],
+                      ),
+                    ))
+                .toList(),
+            onChanged: (value) {
+              if (value != null) {
+                setState(() {
+                  _selectedStatus = value;
+                });
+              }
+            },
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSubmitButton(ColorScheme colorScheme) {
+    return FilledButton(
+      onPressed: _isSubmitting ? null : _handleSubmit,
+      style: FilledButton.styleFrom(
+        minimumSize: const Size.fromHeight(56),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+        ),
+      ),
+      child: _isSubmitting
+          ? const SizedBox(
+              height: 22,
+              width: 22,
+              child: CircularProgressIndicator(
+                strokeWidth: 2.5,
+                color: Colors.white,
+              ),
+            )
+          : Text(
+              _isEditing ? 'Actualizar Cita' : 'Crear Cita',
+              style: GoogleFonts.dmSans(
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+    );
+  }
+
+  Widget _buildWarningCard({
+    required IconData icon,
+    required String title,
+    required String message,
+    required ColorScheme colorScheme,
+  }) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.orange[50],
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: Colors.orange[300]!),
+      ),
+      child: Row(
+        children: [
+          Icon(icon, color: Colors.orange[700], size: 28),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: GoogleFonts.dmSans(
+                    fontWeight: FontWeight.bold,
+                    color: Colors.orange[900],
+                    fontSize: 14,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  message,
+                  style: GoogleFonts.dmSans(
+                    fontSize: 13,
+                    color: Colors.orange[800],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }
