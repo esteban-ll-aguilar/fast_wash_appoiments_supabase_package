@@ -24,6 +24,7 @@ class AppointmentListPage extends StatefulWidget {
 
 class _AppointmentListPageState extends State<AppointmentListPage> {
   AppointmentStatus? _filterStatus;
+  DateTime _selectedMonth = DateTime.now();
 
   @override
   void initState() {
@@ -33,10 +34,34 @@ class _AppointmentListPageState extends State<AppointmentListPage> {
 
   Future<void> _loadAppointments() async {
     if (widget.isAdmin) {
-      await widget.controller.loadAllAppointments();
+      // Para admin, cargar citas del mes seleccionado
+      final firstDay = DateTime(_selectedMonth.year, _selectedMonth.month, 1);
+      final lastDay = DateTime(_selectedMonth.year, _selectedMonth.month + 1, 0, 23, 59, 59);
+      await widget.controller.filterByDateRange(
+        startDate: firstDay,
+        endDate: lastDay,
+      );
     } else {
       await widget.controller.loadUserAppointments();
     }
+  }
+
+  Future<void> _changeMonth(int monthsToAdd) async {
+    setState(() {
+      _selectedMonth = DateTime(
+        _selectedMonth.year,
+        _selectedMonth.month + monthsToAdd,
+      );
+    });
+    await _loadAppointments();
+  }
+
+  String _getMonthYearText() {
+    final months = [
+      'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
+      'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'
+    ];
+    return '${months[_selectedMonth.month - 1]} ${_selectedMonth.year}';
   }
 
   Future<void> _filterByStatus(AppointmentStatus? status) async {
@@ -127,9 +152,33 @@ class _AppointmentListPageState extends State<AppointmentListPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Mis Citas'),
+        title: widget.isAdmin
+            ? Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Text('Todas las Citas', style: TextStyle(fontSize: 16)),
+                  Text(
+                    _getMonthYearText(),
+                    style: const TextStyle(fontSize: 12, fontWeight: FontWeight.normal),
+                  ),
+                ],
+              )
+            : const Text('Mis Citas'),
         centerTitle: true,
+        leading: widget.isAdmin
+            ? IconButton(
+                icon: const Icon(Icons.chevron_left),
+                tooltip: 'Mes anterior',
+                onPressed: () => _changeMonth(-1),
+              )
+            : null,
         actions: [
+          if (widget.isAdmin)
+            IconButton(
+              icon: const Icon(Icons.chevron_right),
+              tooltip: 'Mes siguiente',
+              onPressed: () => _changeMonth(1),
+            ),
           PopupMenuButton<AppointmentStatus?>(
             icon: const Icon(Icons.filter_list),
             onSelected: _filterByStatus,
