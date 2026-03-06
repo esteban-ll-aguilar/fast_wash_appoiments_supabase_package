@@ -172,12 +172,13 @@ class _AppointmentFormPageState extends State<AppointmentFormPage> {
 
   Future<void> _selectDate() async {
     final now = DateTime.now();
+    // La fecha mínima es hoy
     final firstDate = DateTime(now.year, now.month, now.day);
     final lastDate = DateTime(now.year + 1, now.month, now.day);
 
     final date = await showDatePicker(
       context: context,
-      initialDate: firstDate,
+      initialDate: _selectedDate ?? firstDate,
       firstDate: firstDate,
       lastDate: lastDate,
       locale: const Locale('es', 'ES'),
@@ -186,17 +187,60 @@ class _AppointmentFormPageState extends State<AppointmentFormPage> {
     if (date != null) {
       setState(() {
         _selectedDate = date;
+        // Si seleccionó hoy, resetear la hora para validar el horario mínimo
+        if (date.year == now.year && date.month == now.month && date.day == now.day) {
+          _selectedTime = null;
+        }
       });
     }
   }
 
   Future<void> _selectTime() async {
+    final now = DateTime.now();
+    final isToday = _selectedDate != null &&
+        _selectedDate!.year == now.year &&
+        _selectedDate!.month == now.month &&
+        _selectedDate!.day == now.day;
+    
+    // Si es hoy, calcular hora mínima (5 minutos desde ahora)
+    TimeOfDay initialTime;
+    if (isToday) {
+      final nowPlus5 = now.add(const Duration(minutes: 5));
+      initialTime = TimeOfDay(hour: nowPlus5.hour, minute: nowPlus5.minute);
+    } else {
+      initialTime = _selectedTime ?? const TimeOfDay(hour: 8, minute: 0);
+    }
+
     final time = await showTimePicker(
       context: context,
-      initialTime: TimeOfDay.now(),
+      initialTime: initialTime,
     );
 
     if (time != null) {
+      // Validar que la hora no sea en el pasado (si es hoy)
+      if (isToday) {
+        final selectedDateTime = DateTime(
+          _selectedDate!.year,
+          _selectedDate!.month,
+          _selectedDate!.day,
+          time.hour,
+          time.minute,
+        );
+        
+        final minimumTime = now.add(const Duration(minutes: 5));
+        
+        if (selectedDateTime.isBefore(minimumTime)) {
+          if (!mounted) return;
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('La hora debe ser al menos 5 minutos después de ahora'),
+              backgroundColor: Colors.orange,
+            ),
+          );
+          return;
+        }
+      }
+      
       setState(() {
         _selectedTime = time;
       });
@@ -248,6 +292,27 @@ class _AppointmentFormPageState extends State<AppointmentFormPage> {
         const SnackBar(
           content: Text('Selecciona una hora'),
           backgroundColor: Colors.orange,
+        ),
+      );
+      return;
+    }
+
+    // Validación final: verificar que fecha/hora no sea en el pasado
+    final selectedDateTime = DateTime(
+      _selectedDate!.year,
+      _selectedDate!.month,
+      _selectedDate!.day,
+      _selectedTime!.hour,
+      _selectedTime!.minute,
+    );
+    
+    final minimumTime = DateTime.now().add(const Duration(minutes: 5));
+    
+    if (selectedDateTime.isBefore(minimumTime) && !_isEditing) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('¡La fecha y hora deben ser futuras! (Al menos 5 minutos desde ahora)'),
+          backgroundColor: Colors.red,
         ),
       );
       return;
@@ -435,66 +500,160 @@ class _AppointmentFormPageState extends State<AppointmentFormPage> {
                     const SizedBox(height: 16),
                   ],
                   
-                  // Selector de tipo de vehículo
-                  DropdownButtonFormField<VehicleTypeModel>(
-                    value: _selectedVehicleType,
-                    decoration: const InputDecoration(
-                      labelText: 'Tipo de Vehículo',
-                      prefixIcon: Icon(Icons.directions_car),
-                      border: OutlineInputBorder(),
+                  // Verificar si hay datos en el catálogo
+                  if (widget.catalogController.vehicleTypes.isEmpty) ...[
+                    Card(
+                      color: Colors.orange[50],
+                      child: Padding(
+                        padding: const EdgeInsets.all(16),
+                        child: Row(
+                          children: [
+                            Icon(Icons.warning_amber, color: Colors.orange[700], size: 32),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    'No hay tipos de vehículo',
+                                    style: TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                      color: Colors.orange[900],
+                                    ),
+                                  ),
+                                  const SizedBox(height: 4),
+                                  const Text(
+                                    'El administrador debe crear tipos de vehículo primero.',
+                                    style: TextStyle(fontSize: 13),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
                     ),
-                    items: widget.catalogController.vehicleTypes
-                        .map((vt) => DropdownMenuItem(
-                              value: vt,
-                              child: Text(vt.name),
-                            ))
-                        .toList(),
-                    onChanged: (value) {
-                      setState(() {
-                        _selectedVehicleType = value;
-                        _selectedWashedType = null; // Reset lavado
-                      });
-                    },
-                    validator: (value) {
-                      if (value == null) {
-                        return 'Selecciona un tipo de vehículo';
-                      }
-                      return null;
-                    },
-                  ),
-                  const SizedBox(height: 16),
+                    const SizedBox(height: 16),
+                  ] else ...[
+                    // Selector de tipo de vehículo
+                    DropdownButtonFormField<VehicleTypeModel>(
+                      value: _selectedVehicleType,
+                      decoration: const InputDecoration(
+                        labelText: 'Tipo de Vehículo',
+                        prefixIcon: Icon(Icons.directions_car),
+                        border: OutlineInputBorder(),
+                      ),
+                      items: widget.catalogController.vehicleTypes
+                          .map((vt) => DropdownMenuItem(
+                                value: vt,
+                                child: Text(vt.name),
+                              ))
+                          .toList(),
+                      onChanged: (value) {
+                        setState(() {
+                          _selectedVehicleType = value;
+                          _selectedWashedType = null; // Reset lavado
+                        });
+                      },
+                      validator: (value) {
+                        if (value == null) {
+                          return 'Selecciona un tipo de vehículo';
+                        }
+                        return null;
+                      },
+                    ),
+                    const SizedBox(height: 16),
+                  ],
                   
-                  // Selector de tipo de lavado
-                  DropdownButtonFormField<WashedTypeModel>(
-                    value: _selectedWashedType,
-                    decoration: const InputDecoration(
-                      labelText: 'Tipo de Lavado',
-                      prefixIcon: Icon(Icons.local_car_wash),
-                      border: OutlineInputBorder(),
-                    ),
-                    items: _selectedVehicleType == null
-                        ? []
-                        : widget.catalogController
-                            .getWashedTypesByVehicle(_selectedVehicleType!.id)
-                            .map((wt) => DropdownMenuItem(
-                                  value: wt,
-                                  child: Text('${wt.name} - ${wt.formattedPrice}'),
-                                ))
-                            .toList(),
-                    onChanged: _selectedVehicleType == null
-                        ? null
-                        : (value) {
+                  // Selector de tipo de lavado o mensaje de estado vacío
+                  if (_selectedVehicleType != null) ...[
+                    Builder(
+                      builder: (context) {
+                        final washedTypes = widget.catalogController
+                            .getWashedTypesByVehicle(_selectedVehicleType!.id);
+                        
+                        if (washedTypes.isEmpty) {
+                          return Card(
+                            color: Colors.orange[50],
+                            child: Padding(
+                              padding: const EdgeInsets.all(16),
+                              child: Row(
+                                children: [
+                                  Icon(Icons.warning_amber, color: Colors.orange[700], size: 32),
+                                  const SizedBox(width: 12),
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          'No hay tipos de lavado',
+                                          style: TextStyle(
+                                            fontWeight: FontWeight.bold,
+                                            color: Colors.orange[900],
+                                          ),
+                                        ),
+                                        const SizedBox(height: 4),
+                                        Text(
+                                          'No hay lavados disponibles para ${_selectedVehicleType!.name}.',
+                                          style: const TextStyle(fontSize: 13),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          );
+                        }
+                        
+                        return DropdownButtonFormField<WashedTypeModel>(
+                          value: _selectedWashedType,
+                          decoration: const InputDecoration(
+                            labelText: 'Tipo de Lavado',
+                            prefixIcon: Icon(Icons.local_car_wash),
+                            border: OutlineInputBorder(),
+                          ),
+                          items: washedTypes
+                              .map((wt) => DropdownMenuItem(
+                                    value: wt,
+                                    child: Text('${wt.name} - ${wt.formattedPrice}'),
+                                  ))
+                              .toList(),
+                          onChanged: (value) {
                             setState(() {
                               _selectedWashedType = value;
                             });
                           },
-                    validator: (value) {
-                      if (value == null) {
-                        return 'Selecciona un tipo de lavado';
-                      }
-                      return null;
-                    },
-                  ),
+                          validator: (value) {
+                            if (value == null) {
+                              return 'Selecciona un tipo de lavado';
+                            }
+                            return null;
+                          },
+                        );
+                      },
+                    ),
+                  ] else ...[
+                    Container(
+                      decoration: BoxDecoration(
+                        border: Border.all(color: Colors.grey[300]!),
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                      padding: const EdgeInsets.all(16),
+                      child: Row(
+                        children: [
+                          Icon(Icons.info_outline, color: Colors.grey[600]),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Text(
+                              'Primero selecciona un tipo de vehículo',
+                              style: TextStyle(color: Colors.grey[600]),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
                   const SizedBox(height: 16),
                   
                   // Selector de fecha

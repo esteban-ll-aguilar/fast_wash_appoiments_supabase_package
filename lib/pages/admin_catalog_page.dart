@@ -104,6 +104,17 @@ class _AdminCatalogPageState extends State<AdminCatalogPage>
   }
 
   void _showCreateWashedTypeDialog() {
+    // Validar que haya tipos de vehículos primero
+    if (widget.catalogController.vehicleTypes.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Primero debes crear tipos de vehículos'),
+          backgroundColor: Colors.orange,
+        ),
+      );
+      return;
+    }
+    
     final nameController = TextEditingController();
     final priceController = TextEditingController();
     final formKey = GlobalKey<FormState>();
@@ -257,7 +268,20 @@ class _AdminCatalogPageState extends State<AdminCatalogPage>
           if (_tabController.index == 0) {
             _showCreateVehicleTypeDialog();
           } else {
-            _showCreateWashedTypeDialog();
+            // Validar que haya tipos de vehículos antes de crear lavados
+            if (widget.catalogController.vehicleTypes.isEmpty) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text('Primero debes crear tipos de vehículos'),
+                  backgroundColor: Colors.orange,
+                  duration: Duration(seconds: 3),
+                ),
+              );
+              // Cambiar a la pestaña de vehículos
+              _tabController.animateTo(0);
+            } else {
+              _showCreateWashedTypeDialog();
+            }
           }
         },
         child: const Icon(Icons.add),
@@ -269,8 +293,32 @@ class _AdminCatalogPageState extends State<AdminCatalogPage>
     final vehicleTypes = widget.catalogController.vehicleTypes;
 
     if (vehicleTypes.isEmpty) {
-      return const Center(
-        child: Text('No hay tipos de vehículos registrados'),
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.directions_car_outlined,
+              size: 80,
+              color: Colors.grey[400],
+            ),
+            const SizedBox(height: 16),
+            Text(
+              'No hay tipos de vehículos',
+              style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                    color: Colors.grey[600],
+                    fontWeight: FontWeight.bold,
+                  ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Crea el primer tipo de vehículo usando el botón +',
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    color: Colors.grey[500],
+                  ),
+            ),
+          ],
+        ),
       );
     }
 
@@ -300,8 +348,35 @@ class _AdminCatalogPageState extends State<AdminCatalogPage>
     final washedTypes = widget.catalogController.washedTypes;
 
     if (washedTypes.isEmpty) {
-      return const Center(
-        child: Text('No hay tipos de lavado registrados'),
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.local_car_wash_outlined,
+              size: 80,
+              color: Colors.grey[400],
+            ),
+            const SizedBox(height: 16),
+            Text(
+              'No hay tipos de lavado',
+              style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                    color: Colors.grey[600],
+                    fontWeight: FontWeight.bold,
+                  ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              widget.catalogController.vehicleTypes.isEmpty
+                  ? 'Primero debes crear tipos de vehículos'
+                  : 'Crea el primer tipo de lavado usando el botón +',
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    color: Colors.grey[500],
+                  ),
+              textAlign: TextAlign.center,
+            ),
+          ],
+        ),
       );
     }
 
