@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:core_ui/core_ui.dart';
 import '../models/appointment_model.dart';
 
-/// Widget de tarjeta para mostrar una cita con diseno profesional.
+/// Tarjeta de cita estilo iOS — limpia, sin sombras, colores del sistema.
 class AppointmentCard extends StatelessWidget {
   final AppointmentModel appointment;
   final bool isAdmin;
@@ -23,359 +24,236 @@ class AppointmentCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
     final theme = Theme.of(context);
     final isPaid = appointment.isPaid;
 
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(20),
-        child: Container(
-          padding: const EdgeInsets.all(AppSpacing.spacing20),
-          decoration: BoxDecoration(
-            color: colorScheme.surface,
-            borderRadius: BorderRadius.circular(20),
-            border: Border.all(
-              color: colorScheme.outlineVariant.withOpacity(0.5),
-              width: 1,
-            ),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withOpacity(0.04),
-                blurRadius: 8,
-                offset: const Offset(0, 2),
-              ),
-            ],
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              _buildHeader(context, colorScheme, theme, isPaid),
-              const SizedBox(height: AppSpacing.spacing16),
-              _buildDateTimeRow(context, colorScheme, theme),
-              if (appointment.washedTypePrice != null) ...[
-                const SizedBox(height: AppSpacing.spacing12),
-                _buildPriceRow(context, colorScheme, theme),
-              ],
-              if (isAdmin && appointment.userName != null) ...[
-                const SizedBox(height: AppSpacing.spacing12),
-                _buildClientRow(context, colorScheme, theme),
-              ],
-              if (isAdmin) ...[
-                const SizedBox(height: AppSpacing.spacing16),
-                Divider(
-                  color: colorScheme.outlineVariant.withOpacity(0.3),
-                  height: 1,
-                ),
-                const SizedBox(height: AppSpacing.spacing16),
-                _buildActionButtons(context, colorScheme, theme, isPaid),
-              ],
-            ],
-          ),
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: () {
+        HapticFeedback.lightImpact();
+        onTap?.call();
+      },
+      child: Container(
+        padding: const EdgeInsets.all(AppSpacing.spacing16),
+        decoration: BoxDecoration(
+          color: AppColors.secondarySystemBackground,
+          borderRadius: BorderRadius.circular(AppSpacing.radiusMedium),
         ),
-      ),
-    );
-  }
-
-  Widget _buildHeader(
-      BuildContext context, ColorScheme colorScheme, ThemeData theme, bool isPaid) {
-    return Row(
-      children: [
-        Container(
-          padding: const EdgeInsets.all(12),
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              colors: isPaid
-                  ? [Colors.green[400]!, Colors.green[600]!]
-                  : [Colors.orange[400]!, Colors.orange[600]!],
-            ),
-            borderRadius: BorderRadius.circular(14),
-            boxShadow: [
-              BoxShadow(
-                color:
-                    (isPaid ? Colors.green : Colors.orange).withOpacity(0.3),
-                blurRadius: 8,
-                offset: const Offset(0, 2),
-              ),
-            ],
-          ),
-          child: Icon(
-            isPaid ? Icons.check_circle_rounded : Icons.schedule_rounded,
-            color: Colors.white,
-            size: 24,
-          ),
-        ),
-        const SizedBox(width: 14),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                appointment.washedTypeName ?? 'Lavado',
-                style: theme.textTheme.titleMedium?.copyWith(
-                  fontWeight: FontWeight.bold,
-                  color: colorScheme.onSurface,
-                ),
-              ),
-              if (appointment.vehicleTypeName != null) ...[
-                const SizedBox(height: 2),
-                Text(
-                  appointment.vehicleTypeName!,
-                  style: theme.textTheme.bodySmall?.copyWith(
-                    color: colorScheme.onSurfaceVariant,
-                  ),
-                ),
-              ],
-            ],
-          ),
-        ),
-        Container(
-          padding:
-              const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-          decoration: BoxDecoration(
-            color:
-                (isPaid ? Colors.green : Colors.orange).withOpacity(0.12),
-            borderRadius: BorderRadius.circular(20),
-            border: Border.all(
-              color:
-                  (isPaid ? Colors.green[600] : Colors.orange[600])!,
-              width: 1.5,
-            ),
-          ),
-          child: Text(
-            appointment.status.displayName,
-            style: theme.textTheme.labelSmall?.copyWith(
-              color: isPaid ? Colors.green[700] : Colors.orange[700],
-              fontWeight: FontWeight.w600,
-              letterSpacing: 0.3,
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildDateTimeRow(
-      BuildContext context, ColorScheme colorScheme, ThemeData theme) {
-    return Row(
-      children: [
-        Expanded(
-          child: _buildInfoChip(
-            icon: Icons.calendar_today_rounded,
-            label: appointment.formattedDate,
-            colorScheme: colorScheme,
-            theme: theme,
-          ),
-        ),
-        const SizedBox(width: AppSpacing.spacing8),
-        Expanded(
-          child: _buildInfoChip(
-            icon: Icons.access_time_rounded,
-            label: appointment.appointmentTime,
-            colorScheme: colorScheme,
-            theme: theme,
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildInfoChip({
-    required IconData icon,
-    required String label,
-    required ColorScheme colorScheme,
-    required ThemeData theme,
-  }) {
-    return Container(
-      padding: const EdgeInsets.symmetric(
-          horizontal: AppSpacing.spacing12, vertical: 10),
-      decoration: BoxDecoration(
-        color: colorScheme.surfaceVariant.withOpacity(0.5),
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(
-            icon,
-            size: 16,
-            color: colorScheme.primary,
-          ),
-          const SizedBox(width: AppSpacing.spacing8),
-          Flexible(
-            child: Text(
-              label,
-              style: theme.textTheme.bodySmall?.copyWith(
-                fontWeight: FontWeight.w500,
-                color: colorScheme.onSurface,
-              ),
-              overflow: TextOverflow.ellipsis,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildPriceRow(
-      BuildContext context, ColorScheme colorScheme, ThemeData theme) {
-    return Container(
-      padding: const EdgeInsets.all(AppSpacing.spacing12),
-      decoration: BoxDecoration(
-        color: Colors.green[50],
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: Colors.green[200]!,
-          width: 1,
-        ),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(
-            Icons.attach_money_rounded,
-            size: 18,
-            color: Colors.green[700],
-          ),
-          const SizedBox(width: AppSpacing.spacing8),
-          Text(
-            appointment.formattedPrice!,
-            style: theme.textTheme.titleMedium?.copyWith(
-              fontWeight: FontWeight.bold,
-              color: Colors.green[700],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildClientRow(
-      BuildContext context, ColorScheme colorScheme, ThemeData theme) {
-    return Container(
-      padding: const EdgeInsets.symmetric(
-          horizontal: AppSpacing.spacing12, vertical: 10),
-      decoration: BoxDecoration(
-        color: colorScheme.primaryContainer.withOpacity(0.3),
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(
-            Icons.person_rounded,
-            size: 16,
-            color: colorScheme.primary,
-          ),
-          const SizedBox(width: AppSpacing.spacing8),
-          Text(
-            appointment.userName!,
-            style: theme.textTheme.bodySmall?.copyWith(
-              fontWeight: FontWeight.w500,
-              color: colorScheme.onSurface,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildActionButtons(
-      BuildContext context, ColorScheme colorScheme, ThemeData theme, bool isPaid) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        Row(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            if (onStatusChange != null)
-              Expanded(
-                child: OutlinedButton.icon(
-                  onPressed: () {
-                    final newStatus = isPaid
-                        ? AppointmentStatus.UNPAYMENT
-                        : AppointmentStatus.PAYMENT;
-                    onStatusChange!(newStatus);
-                  },
-                  icon: Icon(
-                    isPaid
-                        ? Icons.cancel_rounded
-                        : Icons.check_circle_rounded,
-                    size: 18,
+            // Header: icon + title + status badge
+            Row(
+              children: [
+                Container(
+                  width: 40,
+                  height: 40,
+                  decoration: BoxDecoration(
+                    color: isPaid ? AppColors.systemGreen : AppColors.systemOrange,
+                    borderRadius: BorderRadius.circular(AppSpacing.radiusSmall),
                   ),
-                  label: Text(
-                    isPaid ? 'Sin Pagar' : 'Pagado',
-                    style: theme.textTheme.bodySmall?.copyWith(
-                      fontWeight: FontWeight.w600,
-                    ),
+                  child: Icon(
+                    isPaid ? Icons.check_circle_rounded : Icons.schedule_rounded,
+                    color: AppColors.white,
+                    size: 20,
                   ),
-                  style: OutlinedButton.styleFrom(
-                    foregroundColor:
-                        isPaid ? Colors.orange[700] : Colors.green[700],
-                    side: BorderSide(
-                      color: (isPaid
-                              ? Colors.orange[300]
-                              : Colors.green[300])!,
-                      width: 1.5,
-                    ),
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: AppSpacing.spacing16,
-                        vertical: AppSpacing.spacing12),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
+                ),
+                const SizedBox(width: AppSpacing.spacing12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        appointment.washedTypeName ?? 'Lavado',
+                        style: theme.textTheme.bodyLarge?.copyWith(
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      if (appointment.vehicleTypeName != null)
+                        Text(
+                          appointment.vehicleTypeName!,
+                          style: theme.textTheme.bodySmall?.copyWith(
+                            color: AppColors.secondaryLabel,
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: (isPaid ? AppColors.systemGreen : AppColors.systemOrange)
+                        .withValues(alpha: 0.12),
+                    borderRadius: BorderRadius.circular(AppSpacing.radiusSmall),
+                  ),
+                  child: Text(
+                    appointment.status.displayName,
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w500,
+                      color: isPaid ? AppColors.systemGreen : AppColors.systemOrange,
                     ),
                   ),
                 ),
-              ),
-            if (onStatusChange != null && onEdit != null)
-              const SizedBox(width: AppSpacing.spacing8),
-            if (onEdit != null)
-              Expanded(
-                child: FilledButton.icon(
-                  onPressed: onEdit,
-                  icon: const Icon(Icons.edit_rounded, size: 18),
-                  label: Text(
-                    'Editar',
-                    style: theme.textTheme.bodySmall?.copyWith(
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                  style: FilledButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: AppSpacing.spacing16,
-                        vertical: AppSpacing.spacing12),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
+              ],
+            ),
+
+            const SizedBox(height: AppSpacing.spacing12),
+
+            // Date + Time row
+            Row(
+              children: [
+                const Icon(Icons.calendar_today_rounded,
+                    size: 14, color: AppColors.secondaryLabel),
+                const SizedBox(width: AppSpacing.spacing6),
+                Text(
+                  appointment.formattedDate,
+                  style: const TextStyle(
+                    fontSize: 13,
+                    color: AppColors.secondaryLabel,
                   ),
                 ),
+                const SizedBox(width: AppSpacing.spacing16),
+                const Icon(Icons.access_time_rounded,
+                    size: 14, color: AppColors.secondaryLabel),
+                const SizedBox(width: AppSpacing.spacing6),
+                Text(
+                  appointment.appointmentTime,
+                  style: const TextStyle(
+                    fontSize: 13,
+                    color: AppColors.secondaryLabel,
+                  ),
+                ),
+                const Spacer(),
+                if (appointment.washedTypePrice != null)
+                  Text(
+                    appointment.formattedPrice!,
+                    style: theme.textTheme.bodyLarge?.copyWith(
+                      fontWeight: FontWeight.w700,
+                      color: AppColors.label,
+                    ),
+                  ),
+              ],
+            ),
+
+            // Admin: client name
+            if (isAdmin && appointment.userName != null) ...[
+              const SizedBox(height: AppSpacing.spacing8),
+              Row(
+                children: [
+                  const Icon(Icons.person_rounded,
+                      size: 14, color: AppColors.secondaryLabel),
+                  const SizedBox(width: AppSpacing.spacing6),
+                  Text(
+                    appointment.userName!,
+                    style: const TextStyle(
+                      fontSize: 13,
+                      color: AppColors.secondaryLabel,
+                    ),
+                  ),
+                ],
               ),
+            ],
+
+            // Admin actions
+            if (isAdmin) ...[
+              Padding(
+                padding: const EdgeInsets.only(top: AppSpacing.spacing12),
+                child: Divider(
+                  color: AppColors.separator,
+                  height: 0.5,
+                  thickness: 0.5,
+                ),
+              ),
+              const SizedBox(height: AppSpacing.spacing12),
+              _buildActionButtons(context, theme, isPaid),
+            ],
           ],
         ),
-        if (isPaid && onPrintInvoice != null) ...[
-          const SizedBox(height: AppSpacing.spacing8),
-          FilledButton.icon(
-            onPressed: onPrintInvoice,
-            icon: const Icon(Icons.print_rounded, size: 18),
-            label: Text(
-              'Imprimir Factura',
-              style: theme.textTheme.bodySmall?.copyWith(
-                fontWeight: FontWeight.w600,
-              ),
+      ),
+    );
+  }
+
+  Widget _buildActionButtons(BuildContext context, ThemeData theme, bool isPaid) {
+    return Row(
+      children: [
+        if (onStatusChange != null)
+          Expanded(
+            child: _buildActionBtn(
+              icon: isPaid ? Icons.cancel_rounded : Icons.check_circle_rounded,
+              label: isPaid ? 'Sin Pagar' : 'Pagado',
+              color: isPaid ? AppColors.systemOrange : AppColors.systemGreen,
+              onTap: () {
+                final newStatus = isPaid
+                    ? AppointmentStatus.UNPAYMENT
+                    : AppointmentStatus.PAYMENT;
+                onStatusChange!(newStatus);
+              },
             ),
-            style: FilledButton.styleFrom(
-              backgroundColor: Colors.blue[600],
-              padding: const EdgeInsets.symmetric(
-                  horizontal: AppSpacing.spacing16,
-                  vertical: AppSpacing.spacing12),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
+          ),
+        if (onStatusChange != null && onEdit != null)
+          const SizedBox(width: AppSpacing.spacing8),
+        if (onEdit != null)
+          Expanded(
+            child: _buildActionBtn(
+              icon: Icons.edit_rounded,
+              label: 'Editar',
+              color: AppColors.primary,
+              filled: true,
+              onTap: onEdit!,
+            ),
+          ),
+        if (isPaid && onPrintInvoice != null) ...[
+          const SizedBox(width: AppSpacing.spacing8),
+          Expanded(
+            child: _buildActionBtn(
+              icon: Icons.print_rounded,
+              label: 'Factura',
+              color: AppColors.systemBlue,
+              filled: true,
+              onTap: onPrintInvoice!,
             ),
           ),
         ],
       ],
+    );
+  }
+
+  Widget _buildActionBtn({
+    required IconData icon,
+    required String label,
+    required Color color,
+    required VoidCallback onTap,
+    bool filled = false,
+  }) {
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: () {
+        HapticFeedback.lightImpact();
+        onTap();
+      },
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: AppSpacing.spacing10),
+        decoration: BoxDecoration(
+          color: filled ? color : color.withValues(alpha: 0.1),
+          borderRadius: BorderRadius.circular(AppSpacing.radiusSmall),
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(icon, size: 16, color: filled ? AppColors.white : color),
+            const SizedBox(width: AppSpacing.spacing6),
+            Text(
+              label,
+              style: TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
+                color: filled ? AppColors.white : color,
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }
