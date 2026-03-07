@@ -11,12 +11,14 @@ class AppointmentListPage extends StatefulWidget {
   final AppointmentController controller;
   final CatalogController? catalogController;
   final bool isAdmin;
+  final Function(AppointmentModel)? onPrintInvoice; // Callback para imprimir factura
 
   const AppointmentListPage({
     Key? key,
     required this.controller,
     this.catalogController,
     this.isAdmin = false,
+    this.onPrintInvoice,
   }) : super(key: key);
 
   @override
@@ -582,6 +584,11 @@ class _AppointmentListPageState extends State<AppointmentListPage>
                 onStatusChange: widget.isAdmin
                     ? (newStatus) =>
                         _changeAppointmentStatus(appointment, newStatus)
+                    : null,
+                onPrintInvoice: widget.isAdmin && 
+                                appointment.isPaid && 
+                                widget.onPrintInvoice != null
+                    ? () => widget.onPrintInvoice!(appointment)
                     : null,
               ),
             );

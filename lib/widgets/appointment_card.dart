@@ -9,6 +9,7 @@ class AppointmentCard extends StatelessWidget {
   final VoidCallback? onTap;
   final VoidCallback? onEdit;
   final Function(AppointmentStatus)? onStatusChange;
+  final VoidCallback? onPrintInvoice; // Nuevo: para imprimir factura
 
   const AppointmentCard({
     Key? key,
@@ -17,6 +18,7 @@ class AppointmentCard extends StatelessWidget {
     this.onTap,
     this.onEdit,
     this.onStatusChange,
+    this.onPrintInvoice,
   }) : super(key: key);
 
   @override
@@ -274,62 +276,90 @@ class AppointmentCard extends StatelessWidget {
 
   Widget _buildActionButtons(
       BuildContext context, ColorScheme colorScheme, bool isPaid) {
-    return Row(
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        if (onStatusChange != null)
-          Expanded(
-            child: OutlinedButton.icon(
-              onPressed: () {
-                final newStatus = isPaid
-                    ? AppointmentStatus.UNPAYMENT
-                    : AppointmentStatus.PAYMENT;
-                onStatusChange!(newStatus);
-              },
-              icon: Icon(
-                isPaid ? Icons.cancel_rounded : Icons.check_circle_rounded,
-                size: 18,
-              ),
-              label: Text(
-                isPaid ? 'Sin Pagar' : 'Pagado',
-                style: GoogleFonts.dmSans(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w600,
+        // Fila principal: Cambiar estado + Editar
+        Row(
+          children: [
+            if (onStatusChange != null)
+              Expanded(
+                child: OutlinedButton.icon(
+                  onPressed: () {
+                    final newStatus = isPaid
+                        ? AppointmentStatus.UNPAYMENT
+                        : AppointmentStatus.PAYMENT;
+                    onStatusChange!(newStatus);
+                  },
+                  icon: Icon(
+                    isPaid ? Icons.cancel_rounded : Icons.check_circle_rounded,
+                    size: 18,
+                  ),
+                  label: Text(
+                    isPaid ? 'Sin Pagar' : 'Pagado',
+                    style: GoogleFonts.dmSans(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: isPaid ? Colors.orange[700] : Colors.green[700],
+                    side: BorderSide(
+                      color: (isPaid ? Colors.orange[300] : Colors.green[300])!,
+                      width: 1.5,
+                    ),
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
                 ),
               ),
-              style: OutlinedButton.styleFrom(
-                foregroundColor: isPaid ? Colors.orange[700] : Colors.green[700],
-                side: BorderSide(
-                  color: (isPaid ? Colors.orange[300] : Colors.green[300])!,
-                  width: 1.5,
+            if (onStatusChange != null && onEdit != null) const SizedBox(width: 8),
+            if (onEdit != null)
+              Expanded(
+                child: FilledButton.icon(
+                  onPressed: onEdit,
+                  icon: const Icon(Icons.edit_rounded, size: 18),
+                  label: Text(
+                    'Editar',
+                    style: GoogleFonts.dmSans(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  style: FilledButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
                 ),
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
+              ),
+          ],
+        ),
+        // Botón de imprimir factura (solo si está pagada y hay callback)
+        if (isPaid && onPrintInvoice != null) ...[
+          const SizedBox(height: 8),
+          FilledButton.icon(
+            onPressed: onPrintInvoice,
+            icon: const Icon(Icons.print_rounded, size: 18),
+            label: Text(
+              'Imprimir Factura',
+              style: GoogleFonts.dmSans(
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            style: FilledButton.styleFrom(
+              backgroundColor: Colors.blue[600],
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
               ),
             ),
           ),
-        if (onStatusChange != null && onEdit != null) const SizedBox(width: 8),
-        if (onEdit != null)
-          Expanded(
-            child: FilledButton.icon(
-              onPressed: onEdit,
-              icon: const Icon(Icons.edit_rounded, size: 18),
-              label: Text(
-                'Editar',
-                style: GoogleFonts.dmSans(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-              style: FilledButton.styleFrom(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-              ),
-            ),
-          ),
+        ],
       ],
     );
   }
