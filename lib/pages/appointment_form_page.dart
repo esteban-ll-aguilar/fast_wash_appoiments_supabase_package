@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
+import 'package:core_ui/core_ui.dart';
 import '../controllers/appointment_controller.dart';
 import '../controllers/catalog_controller.dart';
 import '../models/vehicle_type_model.dart';
@@ -9,12 +9,12 @@ import '../models/user_model.dart';
 import '../services/user_service.dart';
 import '../utils/validators.dart';
 
-/// Página para crear o editar una cita con diseño profesional.
+/// Pagina para crear o editar una cita con diseno profesional.
 class AppointmentFormPage extends StatefulWidget {
   final AppointmentController appointmentController;
   final CatalogController catalogController;
   final bool isAdmin;
-  final AppointmentModel? appointment; // Para edición
+  final AppointmentModel? appointment;
 
   const AppointmentFormPage({
     Key? key,
@@ -32,7 +32,7 @@ class _AppointmentFormPageState extends State<AppointmentFormPage> {
   final _formKey = GlobalKey<FormState>();
   final _dniController = TextEditingController();
   final _userService = UserService();
-  
+
   VehicleTypeModel? _selectedVehicleType;
   WashedTypeModel? _selectedWashedType;
   DateTime? _selectedDate;
@@ -53,11 +53,9 @@ class _AppointmentFormPageState extends State<AppointmentFormPage> {
     }
   }
 
-  /// Carga los datos del appointment para edición
   Future<void> _loadAppointmentData() async {
     final apt = widget.appointment!;
-    
-    // Cargar usuario si es admin
+
     if (widget.isAdmin) {
       _dniController.text = apt.userDni;
       try {
@@ -66,19 +64,15 @@ class _AppointmentFormPageState extends State<AppointmentFormPage> {
         debugPrint('Error loading user: $e');
       }
     }
-    
-    // Cargar fecha y hora
+
     _selectedDate = apt.appointmentDate;
     final timeParts = apt.appointmentTime.split(':');
     _selectedTime = TimeOfDay(
       hour: int.parse(timeParts[0]),
       minute: int.parse(timeParts[1]),
     );
-    
-    // Cargar estado
+
     _selectedStatus = apt.status;
-    
-    // Los tipos de vehículo y lavado se cargarán después del catálogo
     setState(() {});
   }
 
@@ -90,19 +84,18 @@ class _AppointmentFormPageState extends State<AppointmentFormPage> {
 
   Future<void> _loadCatalog() async {
     await widget.catalogController.loadCatalog();
-    
-    // Si está editando, seleccionar el tipo de lavado correcto
+
     if (_isEditing && mounted) {
       final apt = widget.appointment!;
-      _selectedWashedType = widget.catalogController.washedTypes
-          .firstWhere((wt) => wt.id == apt.washedTypeId, orElse: () => widget.catalogController.washedTypes.first);
-      
-      // Seleccionar el tipo de vehículo correcto
+      _selectedWashedType = widget.catalogController.washedTypes.firstWhere(
+          (wt) => wt.id == apt.washedTypeId,
+          orElse: () => widget.catalogController.washedTypes.first);
+
       if (_selectedWashedType != null) {
         _selectedVehicleType = widget.catalogController.vehicleTypes
             .firstWhere((vt) => vt.id == _selectedWashedType!.vehicleTypeId);
       }
-      
+
       setState(() {});
     }
   }
@@ -121,7 +114,7 @@ class _AppointmentFormPageState extends State<AppointmentFormPage> {
     if (!DniValidator.isValidEcuadorianDni(_dniController.text.trim())) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('DNI inválido'),
+          content: Text('DNI invalido'),
           backgroundColor: Colors.red,
         ),
       );
@@ -133,8 +126,9 @@ class _AppointmentFormPageState extends State<AppointmentFormPage> {
     });
 
     try {
-      final user = await _userService.getUserByDni(_dniController.text.trim());
-      
+      final user =
+          await _userService.getUserByDni(_dniController.text.trim());
+
       setState(() {
         _selectedUser = user;
         _isSearchingUser = false;
@@ -173,7 +167,6 @@ class _AppointmentFormPageState extends State<AppointmentFormPage> {
 
   Future<void> _selectDate() async {
     final now = DateTime.now();
-    // La fecha mínima es hoy
     final firstDate = DateTime(now.year, now.month, now.day);
     final lastDate = DateTime(now.year + 1, now.month, now.day);
 
@@ -188,8 +181,9 @@ class _AppointmentFormPageState extends State<AppointmentFormPage> {
     if (date != null) {
       setState(() {
         _selectedDate = date;
-        // Si seleccionó hoy, resetear la hora para validar el horario mínimo
-        if (date.year == now.year && date.month == now.month && date.day == now.day) {
+        if (date.year == now.year &&
+            date.month == now.month &&
+            date.day == now.day) {
           _selectedTime = null;
         }
       });
@@ -202,12 +196,12 @@ class _AppointmentFormPageState extends State<AppointmentFormPage> {
         _selectedDate!.year == now.year &&
         _selectedDate!.month == now.month &&
         _selectedDate!.day == now.day;
-    
-    // Si es hoy, calcular hora mínima (5 minutos desde ahora)
+
     TimeOfDay initialTime;
     if (isToday) {
       final nowPlus5 = now.add(const Duration(minutes: 5));
-      initialTime = TimeOfDay(hour: nowPlus5.hour, minute: nowPlus5.minute);
+      initialTime =
+          TimeOfDay(hour: nowPlus5.hour, minute: nowPlus5.minute);
     } else {
       initialTime = _selectedTime ?? const TimeOfDay(hour: 8, minute: 0);
     }
@@ -218,7 +212,6 @@ class _AppointmentFormPageState extends State<AppointmentFormPage> {
     );
 
     if (time != null) {
-      // Validar que la hora no sea en el pasado (si es hoy)
       if (isToday) {
         final selectedDateTime = DateTime(
           _selectedDate!.year,
@@ -227,21 +220,22 @@ class _AppointmentFormPageState extends State<AppointmentFormPage> {
           time.hour,
           time.minute,
         );
-        
+
         final minimumTime = now.add(const Duration(minutes: 5));
-        
+
         if (selectedDateTime.isBefore(minimumTime)) {
           if (!mounted) return;
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
-              content: Text('La hora debe ser al menos 5 minutos después de ahora'),
+              content: Text(
+                  'La hora debe ser al menos 5 minutos despues de ahora'),
               backgroundColor: Colors.orange,
             ),
           );
           return;
         }
       }
-      
+
       setState(() {
         _selectedTime = time;
       });
@@ -257,7 +251,6 @@ class _AppointmentFormPageState extends State<AppointmentFormPage> {
   Future<void> _handleSubmit() async {
     if (!_formKey.currentState!.validate()) return;
 
-    // Validar usuario si es admin
     if (widget.isAdmin && _selectedUser == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
@@ -298,7 +291,6 @@ class _AppointmentFormPageState extends State<AppointmentFormPage> {
       return;
     }
 
-    // Validación final: verificar que fecha/hora no sea en el pasado
     final selectedDateTime = DateTime(
       _selectedDate!.year,
       _selectedDate!.month,
@@ -306,13 +298,14 @@ class _AppointmentFormPageState extends State<AppointmentFormPage> {
       _selectedTime!.hour,
       _selectedTime!.minute,
     );
-    
+
     final minimumTime = DateTime.now().add(const Duration(minutes: 5));
-    
+
     if (selectedDateTime.isBefore(minimumTime) && !_isEditing) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('¡La fecha y hora deben ser futuras! (Al menos 5 minutos desde ahora)'),
+          content: Text(
+              '¡La fecha y hora deben ser futuras! (Al menos 5 minutos desde ahora)'),
           backgroundColor: Colors.red,
         ),
       );
@@ -324,18 +317,19 @@ class _AppointmentFormPageState extends State<AppointmentFormPage> {
     });
 
     final timeString = _formatTime(_selectedTime!);
-    
-    // Verificar disponibilidad (solo si no está editando o si cambió fecha/hora)
+
     bool needsAvailabilityCheck = true;
     if (_isEditing) {
       final apt = widget.appointment!;
-      final sameDate = _selectedDate!.isAtSameMomentAs(apt.appointmentDate);
+      final sameDate =
+          _selectedDate!.isAtSameMomentAs(apt.appointmentDate);
       final sameTime = timeString == apt.appointmentTime;
       needsAvailabilityCheck = !(sameDate && sameTime);
     }
-    
+
     if (needsAvailabilityCheck) {
-      final isAvailable = await widget.appointmentController.isTimeSlotAvailable(
+      final isAvailable =
+          await widget.appointmentController.isTimeSlotAvailable(
         date: _selectedDate!,
         time: timeString,
         excludeAppointmentId: _isEditing ? widget.appointment!.id : null,
@@ -348,7 +342,8 @@ class _AppointmentFormPageState extends State<AppointmentFormPage> {
         if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('Este horario ya está ocupado. Selecciona otro.'),
+            content:
+                Text('Este horario ya esta ocupado. Selecciona otro.'),
             backgroundColor: Colors.red,
           ),
         );
@@ -357,9 +352,8 @@ class _AppointmentFormPageState extends State<AppointmentFormPage> {
     }
 
     AppointmentModel? appointment;
-    
+
     if (_isEditing) {
-      // Actualizar cita existente
       appointment = await widget.appointmentController.updateAppointment(
         id: widget.appointment!.id,
         washedTypeId: _selectedWashedType!.id,
@@ -368,7 +362,6 @@ class _AppointmentFormPageState extends State<AppointmentFormPage> {
         status: _selectedStatus,
       );
     } else {
-      // Crear nueva cita
       appointment = await widget.appointmentController.createAppointment(
         washedTypeId: _selectedWashedType!.id,
         appointmentDate: _selectedDate!,
@@ -387,7 +380,9 @@ class _AppointmentFormPageState extends State<AppointmentFormPage> {
     if (appointment != null) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(_isEditing ? 'Cita actualizada exitosamente' : 'Cita creada exitosamente'),
+          content: Text(_isEditing
+              ? 'Cita actualizada exitosamente'
+              : 'Cita creada exitosamente'),
           backgroundColor: Colors.green,
         ),
       );
@@ -396,8 +391,10 @@ class _AppointmentFormPageState extends State<AppointmentFormPage> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
-            widget.appointmentController.errorMessage ?? 
-            (_isEditing ? 'Error al actualizar la cita' : 'Error al crear la cita'),
+            widget.appointmentController.errorMessage ??
+                (_isEditing
+                    ? 'Error al actualizar la cita'
+                    : 'Error al crear la cita'),
           ),
           backgroundColor: Colors.red,
         ),
@@ -408,7 +405,8 @@ class _AppointmentFormPageState extends State<AppointmentFormPage> {
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
-    
+    final theme = Theme.of(context);
+
     return Scaffold(
       backgroundColor: colorScheme.surface,
       body: CustomScrollView(
@@ -423,8 +421,7 @@ class _AppointmentFormPageState extends State<AppointmentFormPage> {
               titlePadding: const EdgeInsets.only(left: 56, bottom: 16),
               title: Text(
                 _isEditing ? 'Editar Cita' : 'Nueva Cita',
-                style: GoogleFonts.dmSans(
-                  fontSize: 20,
+                style: theme.textTheme.titleLarge?.copyWith(
                   fontWeight: FontWeight.bold,
                   color: colorScheme.onSurface,
                 ),
@@ -450,11 +447,10 @@ class _AppointmentFormPageState extends State<AppointmentFormPage> {
                             strokeWidth: 3,
                             color: colorScheme.primary,
                           ),
-                          const SizedBox(height: 16),
+                          const SizedBox(height: AppSpacing.spacing16),
                           Text(
                             'Cargando opciones...',
-                            style: GoogleFonts.dmSans(
-                              fontSize: 14,
+                            style: theme.textTheme.bodyMedium?.copyWith(
                               color: colorScheme.onSurfaceVariant,
                             ),
                           ),
@@ -464,23 +460,28 @@ class _AppointmentFormPageState extends State<AppointmentFormPage> {
                   );
                 }
 
-                return Padding(
-                  padding: const EdgeInsets.all(20),
+                return FWResponsiveCenter(
+                  maxWidth: 600,
+                  padding: const EdgeInsets.all(AppSpacing.spacing20),
                   child: Form(
                     key: _formKey,
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
-                        if (widget.isAdmin) _buildClientSearchSection(colorScheme),
-                        if (widget.isAdmin) const SizedBox(height: 20),
-                        _buildServiceSelectionSection(colorScheme),
-                        const SizedBox(height: 20),
-                        _buildDateTimeSection(colorScheme),
-                        const SizedBox(height: 20),
-                        if (widget.isAdmin) _buildPaymentStatusSection(colorScheme),
-                        if (widget.isAdmin) const SizedBox(height: 20),
-                        _buildSubmitButton(colorScheme),
-                        const SizedBox(height: 40),
+                        if (widget.isAdmin)
+                          _buildClientSearchSection(colorScheme, theme),
+                        if (widget.isAdmin)
+                          const SizedBox(height: AppSpacing.spacing20),
+                        _buildServiceSelectionSection(colorScheme, theme),
+                        const SizedBox(height: AppSpacing.spacing20),
+                        _buildDateTimeSection(colorScheme, theme),
+                        const SizedBox(height: AppSpacing.spacing20),
+                        if (widget.isAdmin)
+                          _buildPaymentStatusSection(colorScheme, theme),
+                        if (widget.isAdmin)
+                          const SizedBox(height: AppSpacing.spacing20),
+                        _buildSubmitButton(colorScheme, theme),
+                        const SizedBox(height: AppSpacing.spacing40),
                       ],
                     ),
                   ),
@@ -493,9 +494,10 @@ class _AppointmentFormPageState extends State<AppointmentFormPage> {
     );
   }
 
-  Widget _buildClientSearchSection(ColorScheme colorScheme) {
+  Widget _buildClientSearchSection(
+      ColorScheme colorScheme, ThemeData theme) {
     return Container(
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.all(AppSpacing.spacing20),
       decoration: BoxDecoration(
         color: colorScheme.surface,
         borderRadius: BorderRadius.circular(20),
@@ -527,79 +529,48 @@ class _AppointmentFormPageState extends State<AppointmentFormPage> {
                   size: 24,
                 ),
               ),
-              const SizedBox(width: 12),
+              const SizedBox(width: AppSpacing.spacing12),
               Text(
                 'Datos del Cliente',
-                style: GoogleFonts.dmSans(
-                  fontSize: 18,
+                style: theme.textTheme.titleMedium?.copyWith(
                   fontWeight: FontWeight.bold,
                   color: colorScheme.onSurface,
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: AppSpacing.spacing16),
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Expanded(
-                child: TextFormField(
+                child: CUTextField(
                   controller: _dniController,
-                  decoration: InputDecoration(
-                    labelText: 'DNI del Cliente',
-                    labelStyle: GoogleFonts.dmSans(),
-                    hintText: '0123456789',
-                    hintStyle: GoogleFonts.dmSans(
-                      color: colorScheme.onSurfaceVariant.withOpacity(0.5),
-                    ),
-                    prefixIcon: const Icon(Icons.badge_rounded),
-                    filled: true,
-                    fillColor: colorScheme.surfaceVariant.withOpacity(0.5),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(14),
-                      borderSide: BorderSide.none,
-                    ),
-                    counterText: '',
-                  ),
-                  style: GoogleFonts.dmSans(fontSize: 15),
+                  labelText: 'DNI del Cliente',
+                  hintText: '0123456789',
+                  prefixIcon: const Icon(Icons.badge_rounded),
                   keyboardType: TextInputType.number,
                   maxLength: 10,
+                  showCounter: false,
                   enabled: !_isSearchingUser && !_isEditing,
                 ),
               ),
-              const SizedBox(width: 12),
-              FilledButton.icon(
-                onPressed: (_isSearchingUser || _isEditing) ? null : _searchUserByDni,
-                icon: _isSearchingUser
-                    ? const SizedBox(
-                        width: 18,
-                        height: 18,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2,
-                          color: Colors.white,
-                        ),
-                      )
-                    : const Icon(Icons.search_rounded, size: 20),
-                label: Text(
-                  'Buscar',
-                  style: GoogleFonts.dmSans(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-                style: FilledButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(14),
-                  ),
-                ),
+              const SizedBox(width: AppSpacing.spacing12),
+              FWButton(
+                text: 'Buscar',
+                onPressed: (_isSearchingUser || _isEditing)
+                    ? null
+                    : _searchUserByDni,
+                isLoading: _isSearchingUser,
+                icon: const Icon(Icons.search_rounded, size: 20),
+                expand: false,
               ),
             ],
           ),
           if (_selectedUser != null) ...[
-            const SizedBox(height: 16),
+            const SizedBox(height: AppSpacing.spacing16),
             Container(
-              padding: const EdgeInsets.all(16),
+              padding: const EdgeInsets.all(AppSpacing.spacing16),
               decoration: BoxDecoration(
                 gradient: LinearGradient(
                   colors: [
@@ -608,7 +579,8 @@ class _AppointmentFormPageState extends State<AppointmentFormPage> {
                   ],
                 ),
                 borderRadius: BorderRadius.circular(14),
-                border: Border.all(color: Colors.green[300]!, width: 1.5),
+                border:
+                    Border.all(color: Colors.green[300]!, width: 1.5),
               ),
               child: Row(
                 children: [
@@ -633,8 +605,7 @@ class _AppointmentFormPageState extends State<AppointmentFormPage> {
                       children: [
                         Text(
                           _selectedUser!.fullName,
-                          style: GoogleFonts.dmSans(
-                            fontSize: 16,
+                          style: theme.textTheme.titleMedium?.copyWith(
                             fontWeight: FontWeight.bold,
                             color: Colors.green[900],
                           ),
@@ -642,8 +613,7 @@ class _AppointmentFormPageState extends State<AppointmentFormPage> {
                         const SizedBox(height: 2),
                         Text(
                           'DNI: ${_selectedUser!.dni}',
-                          style: GoogleFonts.dmSans(
-                            fontSize: 13,
+                          style: theme.textTheme.bodySmall?.copyWith(
                             color: Colors.green[700],
                           ),
                         ),
@@ -672,9 +642,10 @@ class _AppointmentFormPageState extends State<AppointmentFormPage> {
     );
   }
 
-  Widget _buildServiceSelectionSection(ColorScheme colorScheme) {
+  Widget _buildServiceSelectionSection(
+      ColorScheme colorScheme, ThemeData theme) {
     return Container(
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.all(AppSpacing.spacing20),
       decoration: BoxDecoration(
         color: colorScheme.surface,
         borderRadius: BorderRadius.circular(20),
@@ -706,44 +677,31 @@ class _AppointmentFormPageState extends State<AppointmentFormPage> {
                   size: 24,
                 ),
               ),
-              const SizedBox(width: 12),
+              const SizedBox(width: AppSpacing.spacing12),
               Text(
-                'Selección de Servicio',
-                style: GoogleFonts.dmSans(
-                  fontSize: 18,
+                'Seleccion de Servicio',
+                style: theme.textTheme.titleMedium?.copyWith(
                   fontWeight: FontWeight.bold,
                   color: colorScheme.onSurface,
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 20),
+          const SizedBox(height: AppSpacing.spacing20),
           if (widget.catalogController.vehicleTypes.isEmpty)
             _buildWarningCard(
               icon: Icons.warning_amber_rounded,
-              title: 'No hay tipos de vehículo',
-              message: 'El administrador debe crear tipos de vehículo primero.',
+              title: 'No hay tipos de vehiculo',
+              message:
+                  'El administrador debe crear tipos de vehiculo primero.',
               colorScheme: colorScheme,
+              theme: theme,
             )
           else
-            DropdownButtonFormField<VehicleTypeModel>(
+            CUDropdownField<VehicleTypeModel>(
               value: _selectedVehicleType,
-              decoration: InputDecoration(
-                labelText: 'Tipo de Vehículo',
-                labelStyle: GoogleFonts.dmSans(),
-                prefixIcon: const Icon(Icons.directions_car_rounded),
-                filled: true,
-                fillColor: colorScheme.surfaceVariant.withOpacity(0.5),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(14),
-                  borderSide: BorderSide.none,
-                ),
-              ),
-              style: GoogleFonts.dmSans(
-                fontSize: 15,
-                color: colorScheme.onSurface,
-              ),
-              dropdownColor: colorScheme.surface,
+              labelText: 'Tipo de Vehiculo',
+              prefixIcon: const Icon(Icons.directions_car_rounded),
               items: widget.catalogController.vehicleTypes
                   .map((vt) => DropdownMenuItem(
                         value: vt,
@@ -757,11 +715,11 @@ class _AppointmentFormPageState extends State<AppointmentFormPage> {
                 });
               },
               validator: (value) {
-                if (value == null) return 'Selecciona un tipo de vehículo';
+                if (value == null) return 'Selecciona un tipo de vehiculo';
                 return null;
               },
             ),
-          const SizedBox(height: 16),
+          const SizedBox(height: AppSpacing.spacing16),
           if (_selectedVehicleType != null)
             Builder(
               builder: (context) {
@@ -775,31 +733,19 @@ class _AppointmentFormPageState extends State<AppointmentFormPage> {
                     message:
                         'No hay lavados disponibles para ${_selectedVehicleType!.name}.',
                     colorScheme: colorScheme,
+                    theme: theme,
                   );
                 }
 
-                return DropdownButtonFormField<WashedTypeModel>(
+                return CUDropdownField<WashedTypeModel>(
                   value: _selectedWashedType,
-                  decoration: InputDecoration(
-                    labelText: 'Tipo de Lavado',
-                    labelStyle: GoogleFonts.dmSans(),
-                    prefixIcon: const Icon(Icons.car_repair_rounded),
-                    filled: true,
-                    fillColor: colorScheme.surfaceVariant.withOpacity(0.5),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(14),
-                      borderSide: BorderSide.none,
-                    ),
-                  ),
-                  style: GoogleFonts.dmSans(
-                    fontSize: 15,
-                    color: colorScheme.onSurface,
-                  ),
-                  dropdownColor: colorScheme.surface,
+                  labelText: 'Tipo de Lavado',
+                  prefixIcon: const Icon(Icons.car_repair_rounded),
                   items: washedTypes
                       .map((wt) => DropdownMenuItem(
                             value: wt,
-                            child: Text('${wt.name} - ${wt.formattedPrice}'),
+                            child:
+                                Text('${wt.name} - ${wt.formattedPrice}'),
                           ))
                       .toList(),
                   onChanged: (value) {
@@ -808,7 +754,9 @@ class _AppointmentFormPageState extends State<AppointmentFormPage> {
                     });
                   },
                   validator: (value) {
-                    if (value == null) return 'Selecciona un tipo de lavado';
+                    if (value == null) {
+                      return 'Selecciona un tipo de lavado';
+                    }
                     return null;
                   },
                 );
@@ -816,7 +764,7 @@ class _AppointmentFormPageState extends State<AppointmentFormPage> {
             )
           else
             Container(
-              padding: const EdgeInsets.all(16),
+              padding: const EdgeInsets.all(AppSpacing.spacing16),
               decoration: BoxDecoration(
                 color: colorScheme.surfaceVariant.withOpacity(0.3),
                 borderRadius: BorderRadius.circular(14),
@@ -830,13 +778,12 @@ class _AppointmentFormPageState extends State<AppointmentFormPage> {
                     Icons.info_outline_rounded,
                     color: colorScheme.onSurfaceVariant,
                   ),
-                  const SizedBox(width: 12),
+                  const SizedBox(width: AppSpacing.spacing12),
                   Expanded(
                     child: Text(
-                      'Primero selecciona un tipo de vehículo',
-                      style: GoogleFonts.dmSans(
+                      'Primero selecciona un tipo de vehiculo',
+                      style: theme.textTheme.bodyMedium?.copyWith(
                         color: colorScheme.onSurfaceVariant,
-                        fontSize: 14,
                       ),
                     ),
                   ),
@@ -848,9 +795,10 @@ class _AppointmentFormPageState extends State<AppointmentFormPage> {
     );
   }
 
-  Widget _buildDateTimeSection(ColorScheme colorScheme) {
+  Widget _buildDateTimeSection(
+      ColorScheme colorScheme, ThemeData theme) {
     return Container(
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.all(AppSpacing.spacing20),
       decoration: BoxDecoration(
         color: colorScheme.surface,
         borderRadius: BorderRadius.circular(20),
@@ -882,23 +830,22 @@ class _AppointmentFormPageState extends State<AppointmentFormPage> {
                   size: 24,
                 ),
               ),
-              const SizedBox(width: 12),
+              const SizedBox(width: AppSpacing.spacing12),
               Text(
                 'Fecha y Hora',
-                style: GoogleFonts.dmSans(
-                  fontSize: 18,
+                style: theme.textTheme.titleMedium?.copyWith(
                   fontWeight: FontWeight.bold,
                   color: colorScheme.onSurface,
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 20),
+          const SizedBox(height: AppSpacing.spacing20),
           InkWell(
             onTap: _selectDate,
             borderRadius: BorderRadius.circular(14),
             child: Container(
-              padding: const EdgeInsets.all(16),
+              padding: const EdgeInsets.all(AppSpacing.spacing16),
               decoration: BoxDecoration(
                 color: colorScheme.surfaceVariant.withOpacity(0.5),
                 borderRadius: BorderRadius.circular(14),
@@ -916,8 +863,7 @@ class _AppointmentFormPageState extends State<AppointmentFormPage> {
                       children: [
                         Text(
                           'Fecha de la Cita',
-                          style: GoogleFonts.dmSans(
-                            fontSize: 12,
+                          style: theme.textTheme.bodySmall?.copyWith(
                             color: colorScheme.onSurfaceVariant,
                           ),
                         ),
@@ -926,11 +872,11 @@ class _AppointmentFormPageState extends State<AppointmentFormPage> {
                           _selectedDate == null
                               ? 'Seleccionar fecha'
                               : '${_selectedDate!.day}/${_selectedDate!.month}/${_selectedDate!.year}',
-                          style: GoogleFonts.dmSans(
-                            fontSize: 16,
+                          style: theme.textTheme.titleMedium?.copyWith(
                             fontWeight: FontWeight.w600,
                             color: _selectedDate == null
-                                ? colorScheme.onSurfaceVariant.withOpacity(0.6)
+                                ? colorScheme.onSurfaceVariant
+                                    .withOpacity(0.6)
                                 : colorScheme.onSurface,
                           ),
                         ),
@@ -946,12 +892,12 @@ class _AppointmentFormPageState extends State<AppointmentFormPage> {
               ),
             ),
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: AppSpacing.spacing12),
           InkWell(
             onTap: _selectTime,
             borderRadius: BorderRadius.circular(14),
             child: Container(
-              padding: const EdgeInsets.all(16),
+              padding: const EdgeInsets.all(AppSpacing.spacing16),
               decoration: BoxDecoration(
                 color: colorScheme.surfaceVariant.withOpacity(0.5),
                 borderRadius: BorderRadius.circular(14),
@@ -969,8 +915,7 @@ class _AppointmentFormPageState extends State<AppointmentFormPage> {
                       children: [
                         Text(
                           'Hora de la Cita',
-                          style: GoogleFonts.dmSans(
-                            fontSize: 12,
+                          style: theme.textTheme.bodySmall?.copyWith(
                             color: colorScheme.onSurfaceVariant,
                           ),
                         ),
@@ -979,11 +924,11 @@ class _AppointmentFormPageState extends State<AppointmentFormPage> {
                           _selectedTime == null
                               ? 'Seleccionar hora'
                               : _selectedTime!.format(context),
-                          style: GoogleFonts.dmSans(
-                            fontSize: 16,
+                          style: theme.textTheme.titleMedium?.copyWith(
                             fontWeight: FontWeight.w600,
                             color: _selectedTime == null
-                                ? colorScheme.onSurfaceVariant.withOpacity(0.6)
+                                ? colorScheme.onSurfaceVariant
+                                    .withOpacity(0.6)
                                 : colorScheme.onSurface,
                           ),
                         ),
@@ -1004,9 +949,10 @@ class _AppointmentFormPageState extends State<AppointmentFormPage> {
     );
   }
 
-  Widget _buildPaymentStatusSection(ColorScheme colorScheme) {
+  Widget _buildPaymentStatusSection(
+      ColorScheme colorScheme, ThemeData theme) {
     return Container(
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.all(AppSpacing.spacing20),
       decoration: BoxDecoration(
         color: colorScheme.surface,
         borderRadius: BorderRadius.circular(20),
@@ -1038,36 +984,21 @@ class _AppointmentFormPageState extends State<AppointmentFormPage> {
                   size: 24,
                 ),
               ),
-              const SizedBox(width: 12),
+              const SizedBox(width: AppSpacing.spacing12),
               Text(
                 'Estado de Pago',
-                style: GoogleFonts.dmSans(
-                  fontSize: 18,
+                style: theme.textTheme.titleMedium?.copyWith(
                   fontWeight: FontWeight.bold,
                   color: colorScheme.onSurface,
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 16),
-          DropdownButtonFormField<AppointmentStatus>(
+          const SizedBox(height: AppSpacing.spacing16),
+          CUDropdownField<AppointmentStatus>(
             value: _selectedStatus,
-            decoration: InputDecoration(
-              labelText: 'Estado',
-              labelStyle: GoogleFonts.dmSans(),
-              prefixIcon: const Icon(Icons.payment_rounded),
-              filled: true,
-              fillColor: colorScheme.surfaceVariant.withOpacity(0.5),
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(14),
-                borderSide: BorderSide.none,
-              ),
-            ),
-            style: GoogleFonts.dmSans(
-              fontSize: 15,
-              color: colorScheme.onSurface,
-            ),
-            dropdownColor: colorScheme.surface,
+            labelText: 'Estado',
+            prefixIcon: const Icon(Icons.payment_rounded),
             items: AppointmentStatus.values
                 .map((status) => DropdownMenuItem(
                       value: status,
@@ -1101,31 +1032,11 @@ class _AppointmentFormPageState extends State<AppointmentFormPage> {
     );
   }
 
-  Widget _buildSubmitButton(ColorScheme colorScheme) {
-    return FilledButton(
-      onPressed: _isSubmitting ? null : _handleSubmit,
-      style: FilledButton.styleFrom(
-        minimumSize: const Size.fromHeight(56),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
-        ),
-      ),
-      child: _isSubmitting
-          ? const SizedBox(
-              height: 22,
-              width: 22,
-              child: CircularProgressIndicator(
-                strokeWidth: 2.5,
-                color: Colors.white,
-              ),
-            )
-          : Text(
-              _isEditing ? 'Actualizar Cita' : 'Crear Cita',
-              style: GoogleFonts.dmSans(
-                fontSize: 16,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
+  Widget _buildSubmitButton(ColorScheme colorScheme, ThemeData theme) {
+    return FWButton(
+      text: _isEditing ? 'Actualizar Cita' : 'Crear Cita',
+      onPressed: _handleSubmit,
+      isLoading: _isSubmitting,
     );
   }
 
@@ -1134,9 +1045,10 @@ class _AppointmentFormPageState extends State<AppointmentFormPage> {
     required String title,
     required String message,
     required ColorScheme colorScheme,
+    required ThemeData theme,
   }) {
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(AppSpacing.spacing16),
       decoration: BoxDecoration(
         color: Colors.orange[50],
         borderRadius: BorderRadius.circular(14),
@@ -1145,24 +1057,22 @@ class _AppointmentFormPageState extends State<AppointmentFormPage> {
       child: Row(
         children: [
           Icon(icon, color: Colors.orange[700], size: 28),
-          const SizedBox(width: 12),
+          const SizedBox(width: AppSpacing.spacing12),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
                   title,
-                  style: GoogleFonts.dmSans(
+                  style: theme.textTheme.bodyMedium?.copyWith(
                     fontWeight: FontWeight.bold,
                     color: Colors.orange[900],
-                    fontSize: 14,
                   ),
                 ),
                 const SizedBox(height: 2),
                 Text(
                   message,
-                  style: GoogleFonts.dmSans(
-                    fontSize: 13,
+                  style: theme.textTheme.bodySmall?.copyWith(
                     color: Colors.orange[800],
                   ),
                 ),

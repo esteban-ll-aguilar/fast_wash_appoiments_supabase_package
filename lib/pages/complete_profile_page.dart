@@ -1,13 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
+import 'package:core_ui/core_ui.dart';
 import '../controllers/user_profile_controller.dart';
 import '../models/document_type.dart';
 import '../utils/validators.dart';
 
-/// Página para completar el perfil del usuario con diseño profesional.
-///
-/// Fuerza al usuario a ingresar su DNI, nombre y apellido
-/// antes de poder usar otras funcionalidades del sistema.
+/// Pagina para completar el perfil del usuario con diseno profesional.
 class CompleteProfilePage extends StatefulWidget {
   final UserProfileController controller;
   final VoidCallback onProfileCompleted;
@@ -52,11 +49,12 @@ class _CompleteProfilePageState extends State<CompleteProfilePage>
       curve: Curves.easeOutCubic,
     ));
 
-    // Pre-llenar con datos existentes si los hay
     if (widget.controller.currentUser != null) {
       _dniController.text = widget.controller.currentUser!.dni ?? '';
-      _firstNameController.text = widget.controller.currentUser!.firstName ?? '';
-      _lastNameController.text = widget.controller.currentUser!.lastName ?? '';
+      _firstNameController.text =
+          widget.controller.currentUser!.firstName ?? '';
+      _lastNameController.text =
+          widget.controller.currentUser!.lastName ?? '';
     }
 
     if (widget.controller.currentUser != null) {
@@ -95,17 +93,19 @@ class _CompleteProfilePageState extends State<CompleteProfilePage>
           content: Row(
             children: [
               const Icon(Icons.error_rounded, color: Colors.white),
-              const SizedBox(width: 12),
+              const SizedBox(width: AppSpacing.spacing12),
               Expanded(
                 child: Text(
-                  widget.controller.errorMessage ?? 'Error al actualizar perfil',
+                  widget.controller.errorMessage ??
+                      'Error al actualizar perfil',
                 ),
               ),
             ],
           ),
           backgroundColor: Colors.red[700],
           behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         ),
       );
     }
@@ -114,6 +114,7 @@ class _CompleteProfilePageState extends State<CompleteProfilePage>
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
+    final theme = Theme.of(context);
 
     return Scaffold(
       backgroundColor: colorScheme.surface,
@@ -126,16 +127,17 @@ class _CompleteProfilePageState extends State<CompleteProfilePage>
               slivers: [
                 SliverFillRemaining(
                   hasScrollBody: false,
-                  child: Padding(
-                    padding: const EdgeInsets.all(24),
+                  child: FWResponsiveCenter(
+                    maxWidth: 600,
+                    padding: const EdgeInsets.all(AppSpacing.spacing24),
                     child: Column(
                       children: [
                         const Spacer(),
-                        _buildHeader(colorScheme),
-                        const SizedBox(height: 48),
-                        _buildForm(colorScheme),
-                        const SizedBox(height: 24),
-                        _buildNote(colorScheme),
+                        _buildHeader(colorScheme, theme),
+                        const SizedBox(height: AppSpacing.spacing48),
+                        _buildForm(colorScheme, theme),
+                        const SizedBox(height: AppSpacing.spacing24),
+                        _buildNote(colorScheme, theme),
                         const Spacer(),
                       ],
                     ),
@@ -149,11 +151,11 @@ class _CompleteProfilePageState extends State<CompleteProfilePage>
     );
   }
 
-  Widget _buildHeader(ColorScheme colorScheme) {
+  Widget _buildHeader(ColorScheme colorScheme, ThemeData theme) {
     return Column(
       children: [
         Container(
-          padding: const EdgeInsets.all(24),
+          padding: const EdgeInsets.all(AppSpacing.spacing24),
           decoration: BoxDecoration(
             gradient: LinearGradient(
               colors: [
@@ -178,21 +180,19 @@ class _CompleteProfilePageState extends State<CompleteProfilePage>
             color: colorScheme.primary,
           ),
         ),
-        const SizedBox(height: 24),
+        const SizedBox(height: AppSpacing.spacing24),
         Text(
           'Completa tu Perfil',
-          style: GoogleFonts.dmSans(
-            fontSize: 28,
+          style: theme.textTheme.headlineSmall?.copyWith(
             fontWeight: FontWeight.bold,
             color: colorScheme.onSurface,
           ),
           textAlign: TextAlign.center,
         ),
-        const SizedBox(height: 12),
+        const SizedBox(height: AppSpacing.spacing12),
         Text(
-          'Para continuar, necesitamos que\ncompletes tu información personal.',
-          style: GoogleFonts.dmSans(
-            fontSize: 15,
+          'Para continuar, necesitamos que\ncompletes tu informacion personal.',
+          style: theme.textTheme.bodyLarge?.copyWith(
             color: colorScheme.onSurfaceVariant,
             height: 1.5,
           ),
@@ -202,9 +202,9 @@ class _CompleteProfilePageState extends State<CompleteProfilePage>
     );
   }
 
-  Widget _buildForm(ColorScheme colorScheme) {
+  Widget _buildForm(ColorScheme colorScheme, ThemeData theme) {
     return Container(
-      padding: const EdgeInsets.all(24),
+      padding: const EdgeInsets.all(AppSpacing.spacing24),
       decoration: BoxDecoration(
         color: colorScheme.surface,
         borderRadius: BorderRadius.circular(24),
@@ -228,7 +228,7 @@ class _CompleteProfilePageState extends State<CompleteProfilePage>
               segments: const [
                 ButtonSegment(
                   value: DocumentType.cedula,
-                  label: Text('Cédula'),
+                  label: Text('Cedula'),
                   icon: Icon(Icons.badge_rounded),
                 ),
                 ButtonSegment(
@@ -249,113 +249,54 @@ class _CompleteProfilePageState extends State<CompleteProfilePage>
                 selectedForegroundColor: colorScheme.onPrimary,
               ),
             ),
-            const SizedBox(height: 16),
-            TextFormField(
+            const SizedBox(height: AppSpacing.spacing16),
+            CUTextField(
               controller: _dniController,
-              decoration: InputDecoration(
-                labelText: _selectedType == DocumentType.cedula
-                    ? 'Cédula de Identidad'
-                    : 'RUC',
-                labelStyle: GoogleFonts.dmSans(),
-                hintText: _selectedType == DocumentType.cedula
-                    ? '1234567890'
-                    : '1234567890001',
-                hintStyle: GoogleFonts.dmSans(
-                  color: colorScheme.onSurfaceVariant.withOpacity(0.5),
-                ),
-                prefixIcon: const Icon(Icons.badge_rounded),
-                filled: true,
-                fillColor: colorScheme.surfaceVariant.withOpacity(0.5),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(14),
-                  borderSide: BorderSide.none,
-                ),
-                counterText: '',
-              ),
-              style: GoogleFonts.dmSans(fontSize: 15),
+              labelText: _selectedType == DocumentType.cedula
+                  ? 'Cedula de Identidad'
+                  : 'RUC',
+              hintText: _selectedType == DocumentType.cedula
+                  ? '1234567890'
+                  : '1234567890001',
+              prefixIcon: const Icon(Icons.badge_rounded),
               keyboardType: TextInputType.number,
               maxLength: _selectedType == DocumentType.cedula ? 10 : 13,
+              showCounter: false,
               validator: (value) =>
                   DniValidator.validateDocument(value, _selectedType),
             ),
-            const SizedBox(height: 16),
-            TextFormField(
+            const SizedBox(height: AppSpacing.spacing16),
+            CUTextField(
               controller: _firstNameController,
-              decoration: InputDecoration(
-                labelText: 'Nombres',
-                labelStyle: GoogleFonts.dmSans(),
-                hintText: 'Juan Carlos',
-                hintStyle: GoogleFonts.dmSans(
-                  color: colorScheme.onSurfaceVariant.withOpacity(0.5),
-                ),
-                prefixIcon: const Icon(Icons.person_outline_rounded),
-                filled: true,
-                fillColor: colorScheme.surfaceVariant.withOpacity(0.5),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(14),
-                  borderSide: BorderSide.none,
-                ),
-              ),
-              style: GoogleFonts.dmSans(fontSize: 15),
+              labelText: 'Nombres',
+              hintText: 'Juan Carlos',
+              prefixIcon: const Icon(Icons.person_outline_rounded),
               textCapitalization: TextCapitalization.words,
               validator: (value) => AppointmentValidators.required(
                 value,
                 fieldName: 'El nombre',
               ),
             ),
-            const SizedBox(height: 16),
-            TextFormField(
+            const SizedBox(height: AppSpacing.spacing16),
+            CUTextField(
               controller: _lastNameController,
-              decoration: InputDecoration(
-                labelText: 'Apellidos',
-                labelStyle: GoogleFonts.dmSans(),
-                hintText: 'Pérez González',
-                hintStyle: GoogleFonts.dmSans(
-                  color: colorScheme.onSurfaceVariant.withOpacity(0.5),
-                ),
-                prefixIcon: const Icon(Icons.person_rounded),
-                filled: true,
-                fillColor: colorScheme.surfaceVariant.withOpacity(0.5),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(14),
-                  borderSide: BorderSide.none,
-                ),
-              ),
-              style: GoogleFonts.dmSans(fontSize: 15),
+              labelText: 'Apellidos',
+              hintText: 'Perez Gonzalez',
+              prefixIcon: const Icon(Icons.person_rounded),
               textCapitalization: TextCapitalization.words,
               validator: (value) => AppointmentValidators.required(
                 value,
                 fieldName: 'El apellido',
               ),
             ),
-            const SizedBox(height: 24),
+            const SizedBox(height: AppSpacing.spacing24),
             ListenableBuilder(
               listenable: widget.controller,
               builder: (context, child) {
-                return FilledButton(
-                  onPressed: widget.controller.isLoading ? null : _handleSubmit,
-                  style: FilledButton.styleFrom(
-                    minimumSize: const Size.fromHeight(56),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(14),
-                    ),
-                  ),
-                  child: widget.controller.isLoading
-                      ? const SizedBox(
-                          height: 22,
-                          width: 22,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2.5,
-                            color: Colors.white,
-                          ),
-                        )
-                      : Text(
-                          'Guardar y Continuar',
-                          style: GoogleFonts.dmSans(
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
+                return FWButton(
+                  text: 'Guardar y Continuar',
+                  onPressed: _handleSubmit,
+                  isLoading: widget.controller.isLoading,
                 );
               },
             ),
@@ -365,9 +306,9 @@ class _CompleteProfilePageState extends State<CompleteProfilePage>
     );
   }
 
-  Widget _buildNote(ColorScheme colorScheme) {
+  Widget _buildNote(ColorScheme colorScheme, ThemeData theme) {
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(AppSpacing.spacing16),
       decoration: BoxDecoration(
         color: Colors.orange[50],
         borderRadius: BorderRadius.circular(14),
@@ -382,15 +323,14 @@ class _CompleteProfilePageState extends State<CompleteProfilePage>
             color: Colors.orange[700],
             size: 20,
           ),
-          const SizedBox(width: 12),
+          const SizedBox(width: AppSpacing.spacing12),
           Expanded(
             child: Text(
               _selectedType == DocumentType.cedula
-                  ? 'La cédula debe ser ecuatoriana (10 dígitos) y será validada.'
-                  : 'El RUC debe ser ecuatoriano (13 dígitos) y será validado.',
-              style: GoogleFonts.dmSans(
+                  ? 'La cedula debe ser ecuatoriana (10 digitos) y sera validada.'
+                  : 'El RUC debe ser ecuatoriano (13 digitos) y sera validado.',
+              style: theme.textTheme.bodySmall?.copyWith(
                 color: Colors.orange[900],
-                fontSize: 13,
                 fontWeight: FontWeight.w500,
               ),
             ),

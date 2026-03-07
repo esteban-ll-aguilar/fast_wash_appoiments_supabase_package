@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
+import 'package:core_ui/core_ui.dart';
 import '../controllers/catalog_controller.dart';
 import '../models/vehicle_type_model.dart';
 import '../models/washed_type_model.dart';
 import '../utils/validators.dart';
 
-/// Página de administración para gestionar tipos de vehículos y lavados con diseño profesional.
+/// Pagina de administracion para gestionar tipos de vehiculos y lavados.
 class AdminCatalogPage extends StatefulWidget {
   final CatalogController catalogController;
 
@@ -43,11 +43,13 @@ class _AdminCatalogPageState extends State<AdminCatalogPage>
     final nameController = TextEditingController();
     final formKey = GlobalKey<FormState>();
     final colorScheme = Theme.of(context).colorScheme;
+    final theme = Theme.of(context);
 
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20)),
         title: Row(
           children: [
             Container(
@@ -62,10 +64,10 @@ class _AdminCatalogPageState extends State<AdminCatalogPage>
                 size: 24,
               ),
             ),
-            const SizedBox(width: 12),
+            const SizedBox(width: AppSpacing.spacing12),
             Text(
-              'Nuevo Tipo de Vehículo',
-              style: GoogleFonts.dmSans(fontSize: 18),
+              'Nuevo Tipo de Vehiculo',
+              style: theme.textTheme.titleMedium,
             ),
           ],
         ),
@@ -74,24 +76,11 @@ class _AdminCatalogPageState extends State<AdminCatalogPage>
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              TextFormField(
+              CUTextField(
                 controller: nameController,
-                decoration: InputDecoration(
-                  labelText: 'Nombre',
-                  labelStyle: GoogleFonts.dmSans(),
-                  hintText: 'Ej: Sedan, SUV, Camioneta',
-                  hintStyle: GoogleFonts.dmSans(
-                    color: colorScheme.onSurfaceVariant.withOpacity(0.5),
-                  ),
-                  prefixIcon: const Icon(Icons.edit_rounded),
-                  filled: true,
-                  fillColor: colorScheme.surfaceVariant.withOpacity(0.5),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(14),
-                    borderSide: BorderSide.none,
-                  ),
-                ),
-                style: GoogleFonts.dmSans(fontSize: 15),
+                labelText: 'Nombre',
+                hintText: 'Ej: Sedan, SUV, Camioneta',
+                prefixIcon: const Icon(Icons.edit_rounded),
                 textCapitalization: TextCapitalization.words,
                 validator: (value) => AppointmentValidators.required(
                   value,
@@ -104,18 +93,14 @@ class _AdminCatalogPageState extends State<AdminCatalogPage>
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            style: TextButton.styleFrom(
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
-            ),
-            child: Text('Cancelar', style: GoogleFonts.dmSans()),
+            child: const Text('Cancelar'),
           ),
           FilledButton(
             onPressed: () async {
               if (!formKey.currentState!.validate()) return;
 
-              final result = await widget.catalogController.createVehicleType(
+              final result =
+                  await widget.catalogController.createVehicleType(
                 nameController.text.trim(),
               );
 
@@ -127,18 +112,21 @@ class _AdminCatalogPageState extends State<AdminCatalogPage>
                   content: Row(
                     children: [
                       Icon(
-                        result != null ? Icons.check_circle : Icons.error,
+                        result != null
+                            ? Icons.check_circle
+                            : Icons.error,
                         color: Colors.white,
                       ),
-                      const SizedBox(width: 12),
+                      const SizedBox(width: AppSpacing.spacing12),
                       Text(result != null
-                          ? 'Tipo de vehículo creado'
+                          ? 'Tipo de vehiculo creado'
                           : widget.catalogController.errorMessage ??
                               'Error al crear'),
                     ],
                   ),
-                  backgroundColor:
-                      result != null ? Colors.green[700] : Colors.red[700],
+                  backgroundColor: result != null
+                      ? Colors.green[700]
+                      : Colors.red[700],
                   behavior: SnackBarBehavior.floating,
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12),
@@ -146,12 +134,7 @@ class _AdminCatalogPageState extends State<AdminCatalogPage>
                 ),
               );
             },
-            style: FilledButton.styleFrom(
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
-            ),
-            child: Text('Crear', style: GoogleFonts.dmSans()),
+            child: const Text('Crear'),
           ),
         ],
       ),
@@ -162,18 +145,19 @@ class _AdminCatalogPageState extends State<AdminCatalogPage>
     if (widget.catalogController.vehicleTypes.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Row(
+          content: const Row(
             children: [
-              const Icon(Icons.warning_rounded, color: Colors.white),
-              const SizedBox(width: 12),
-              const Expanded(
-                child: Text('Primero debes crear tipos de vehículos'),
+              Icon(Icons.warning_rounded, color: Colors.white),
+              SizedBox(width: AppSpacing.spacing12),
+              Expanded(
+                child: Text('Primero debes crear tipos de vehiculos'),
               ),
             ],
           ),
           backgroundColor: Colors.orange[700],
           behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12)),
         ),
       );
       return;
@@ -184,11 +168,13 @@ class _AdminCatalogPageState extends State<AdminCatalogPage>
     final formKey = GlobalKey<FormState>();
     VehicleTypeModel? selectedVehicle;
     final colorScheme = Theme.of(context).colorScheme;
+    final theme = Theme.of(context);
 
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20)),
         title: Row(
           children: [
             Container(
@@ -203,11 +189,11 @@ class _AdminCatalogPageState extends State<AdminCatalogPage>
                 size: 24,
               ),
             ),
-            const SizedBox(width: 12),
+            const SizedBox(width: AppSpacing.spacing12),
             Flexible(
               child: Text(
                 'Nuevo Tipo de Lavado',
-                style: GoogleFonts.dmSans(fontSize: 18),
+                style: theme.textTheme.titleMedium,
               ),
             ),
           ],
@@ -220,24 +206,11 @@ class _AdminCatalogPageState extends State<AdminCatalogPage>
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    DropdownButtonFormField<VehicleTypeModel>(
+                    CUDropdownField<VehicleTypeModel>(
                       value: selectedVehicle,
-                      decoration: InputDecoration(
-                        labelText: 'Tipo de Vehículo',
-                        labelStyle: GoogleFonts.dmSans(),
-                        prefixIcon: const Icon(Icons.directions_car_rounded),
-                        filled: true,
-                        fillColor: colorScheme.surfaceVariant.withOpacity(0.5),
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(14),
-                          borderSide: BorderSide.none,
-                        ),
-                      ),
-                      style: GoogleFonts.dmSans(
-                        fontSize: 15,
-                        color: colorScheme.onSurface,
-                      ),
-                      dropdownColor: colorScheme.surface,
+                      labelText: 'Tipo de Vehiculo',
+                      prefixIcon:
+                          const Icon(Icons.directions_car_rounded),
                       items: widget.catalogController.vehicleTypes
                           .map((vt) => DropdownMenuItem(
                                 value: vt,
@@ -254,51 +227,28 @@ class _AdminCatalogPageState extends State<AdminCatalogPage>
                         return null;
                       },
                     ),
-                    const SizedBox(height: 16),
-                    TextFormField(
+                    const SizedBox(height: AppSpacing.spacing16),
+                    CUTextField(
                       controller: nameController,
-                      decoration: InputDecoration(
-                        labelText: 'Nombre del Lavado',
-                        labelStyle: GoogleFonts.dmSans(),
-                        hintText: 'Ej: Lavado Básico, Premium',
-                        hintStyle: GoogleFonts.dmSans(
-                          color: colorScheme.onSurfaceVariant.withOpacity(0.5),
-                        ),
-                        prefixIcon: const Icon(Icons.edit_rounded),
-                        filled: true,
-                        fillColor: colorScheme.surfaceVariant.withOpacity(0.5),
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(14),
-                          borderSide: BorderSide.none,
-                        ),
-                      ),
-                      style: GoogleFonts.dmSans(fontSize: 15),
+                      labelText: 'Nombre del Lavado',
+                      hintText: 'Ej: Lavado Basico, Premium',
+                      prefixIcon: const Icon(Icons.edit_rounded),
                       textCapitalization: TextCapitalization.words,
-                      validator: (value) => AppointmentValidators.required(
+                      validator: (value) =>
+                          AppointmentValidators.required(
                         value,
                         fieldName: 'El nombre',
                       ),
                     ),
-                    const SizedBox(height: 16),
-                    TextFormField(
+                    const SizedBox(height: AppSpacing.spacing16),
+                    CUTextField(
                       controller: priceController,
-                      decoration: InputDecoration(
-                        labelText: 'Precio',
-                        labelStyle: GoogleFonts.dmSans(),
-                        hintText: '0.00',
-                        hintStyle: GoogleFonts.dmSans(
-                          color: colorScheme.onSurfaceVariant.withOpacity(0.5),
-                        ),
-                        prefixIcon: const Icon(Icons.attach_money_rounded),
-                        filled: true,
-                        fillColor: colorScheme.surfaceVariant.withOpacity(0.5),
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(14),
-                          borderSide: BorderSide.none,
-                        ),
-                      ),
-                      style: GoogleFonts.dmSans(fontSize: 15),
-                      keyboardType: const TextInputType.numberWithOptions(
+                      labelText: 'Precio',
+                      hintText: '0.00',
+                      prefixIcon:
+                          const Icon(Icons.attach_money_rounded),
+                      keyboardType:
+                          const TextInputType.numberWithOptions(
                         decimal: true,
                       ),
                       validator: AppointmentValidators.positiveNumber,
@@ -312,18 +262,14 @@ class _AdminCatalogPageState extends State<AdminCatalogPage>
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            style: TextButton.styleFrom(
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
-            ),
-            child: Text('Cancelar', style: GoogleFonts.dmSans()),
+            child: const Text('Cancelar'),
           ),
           FilledButton(
             onPressed: () async {
               if (!formKey.currentState!.validate()) return;
 
-              final result = await widget.catalogController.createWashedType(
+              final result =
+                  await widget.catalogController.createWashedType(
                 name: nameController.text.trim(),
                 vehicleTypeId: selectedVehicle!.id,
                 price: double.parse(priceController.text.trim()),
@@ -337,18 +283,21 @@ class _AdminCatalogPageState extends State<AdminCatalogPage>
                   content: Row(
                     children: [
                       Icon(
-                        result != null ? Icons.check_circle : Icons.error,
+                        result != null
+                            ? Icons.check_circle
+                            : Icons.error,
                         color: Colors.white,
                       ),
-                      const SizedBox(width: 12),
+                      const SizedBox(width: AppSpacing.spacing12),
                       Text(result != null
                           ? 'Tipo de lavado creado'
                           : widget.catalogController.errorMessage ??
                               'Error al crear'),
                     ],
                   ),
-                  backgroundColor:
-                      result != null ? Colors.green[700] : Colors.red[700],
+                  backgroundColor: result != null
+                      ? Colors.green[700]
+                      : Colors.red[700],
                   behavior: SnackBarBehavior.floating,
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12),
@@ -356,12 +305,7 @@ class _AdminCatalogPageState extends State<AdminCatalogPage>
                 ),
               );
             },
-            style: FilledButton.styleFrom(
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
-            ),
-            child: Text('Crear', style: GoogleFonts.dmSans()),
+            child: const Text('Crear'),
           ),
         ],
       ),
@@ -371,6 +315,7 @@ class _AdminCatalogPageState extends State<AdminCatalogPage>
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
+    final theme = Theme.of(context);
 
     return Scaffold(
       backgroundColor: colorScheme.surface,
@@ -383,11 +328,11 @@ class _AdminCatalogPageState extends State<AdminCatalogPage>
             backgroundColor: colorScheme.surface,
             elevation: 0,
             flexibleSpace: FlexibleSpaceBar(
-              titlePadding: const EdgeInsets.only(left: 56, bottom: 52),
+              titlePadding:
+                  const EdgeInsets.only(left: 56, bottom: 52),
               title: Text(
-                'Administrar Catálogo',
-                style: GoogleFonts.dmSans(
-                  fontSize: 20,
+                'Administrar Catalogo',
+                style: theme.textTheme.titleLarge?.copyWith(
                   fontWeight: FontWeight.bold,
                   color: colorScheme.onSurface,
                 ),
@@ -400,7 +345,8 @@ class _AdminCatalogPageState extends State<AdminCatalogPage>
             bottom: PreferredSize(
               preferredSize: const Size.fromHeight(48),
               child: Container(
-                margin: const EdgeInsets.symmetric(horizontal: 16),
+                margin: const EdgeInsets.symmetric(
+                    horizontal: AppSpacing.spacing16),
                 decoration: BoxDecoration(
                   color: colorScheme.surfaceVariant.withOpacity(0.5),
                   borderRadius: BorderRadius.circular(12),
@@ -414,13 +360,12 @@ class _AdminCatalogPageState extends State<AdminCatalogPage>
                   ),
                   labelColor: colorScheme.onPrimary,
                   unselectedLabelColor: colorScheme.onSurfaceVariant,
-                  labelStyle: GoogleFonts.dmSans(
-                    fontSize: 14,
+                  labelStyle: theme.textTheme.bodyMedium?.copyWith(
                     fontWeight: FontWeight.w600,
                   ),
                   dividerColor: Colors.transparent,
                   tabs: const [
-                    Tab(text: 'Vehículos'),
+                    Tab(text: 'Vehiculos'),
                     Tab(text: 'Lavados'),
                   ],
                 ),
@@ -442,11 +387,10 @@ class _AdminCatalogPageState extends State<AdminCatalogPage>
                             strokeWidth: 3,
                             color: colorScheme.primary,
                           ),
-                          const SizedBox(height: 16),
+                          const SizedBox(height: AppSpacing.spacing16),
                           Text(
-                            'Cargando catálogo...',
-                            style: GoogleFonts.dmSans(
-                              fontSize: 14,
+                            'Cargando catalogo...',
+                            style: theme.textTheme.bodyMedium?.copyWith(
                               color: colorScheme.onSurfaceVariant,
                             ),
                           ),
@@ -456,14 +400,18 @@ class _AdminCatalogPageState extends State<AdminCatalogPage>
                   );
                 }
 
-                return SizedBox(
-                  height: MediaQuery.of(context).size.height - 250,
-                  child: TabBarView(
-                    controller: _tabController,
-                    children: [
-                      _buildVehicleTypesList(),
-                      _buildWashedTypesList(),
-                    ],
+                return FWResponsiveCenter(
+                  maxWidth: 800,
+                  child: SizedBox(
+                    height:
+                        MediaQuery.of(context).size.height - 250,
+                    child: TabBarView(
+                      controller: _tabController,
+                      children: [
+                        _buildVehicleTypesList(theme),
+                        _buildWashedTypesList(theme),
+                      ],
+                    ),
                   ),
                 );
               },
@@ -482,12 +430,14 @@ class _AdminCatalogPageState extends State<AdminCatalogPage>
                 if (widget.catalogController.vehicleTypes.isEmpty) {
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
-                      content: Row(
+                      content: const Row(
                         children: [
-                          const Icon(Icons.warning_rounded, color: Colors.white),
-                          const SizedBox(width: 12),
-                          const Expanded(
-                            child: Text('Primero crea tipos de vehículos'),
+                          Icon(Icons.warning_rounded,
+                              color: Colors.white),
+                          SizedBox(width: AppSpacing.spacing12),
+                          Expanded(
+                            child: Text(
+                                'Primero crea tipos de vehiculos'),
                           ),
                         ],
                       ),
@@ -504,14 +454,12 @@ class _AdminCatalogPageState extends State<AdminCatalogPage>
                 }
               }
             },
-            icon: Icon(
-              _tabController.index == 0
-                  ? Icons.add_rounded
-                  : Icons.add_rounded,
-            ),
+            icon: const Icon(Icons.add_rounded),
             label: Text(
-              _tabController.index == 0 ? 'Vehículo' : 'Lavado',
-              style: GoogleFonts.dmSans(fontWeight: FontWeight.w600),
+              _tabController.index == 0 ? 'Vehiculo' : 'Lavado',
+              style: theme.textTheme.labelLarge?.copyWith(
+                fontWeight: FontWeight.w600,
+              ),
             ),
           );
         },
@@ -519,19 +467,19 @@ class _AdminCatalogPageState extends State<AdminCatalogPage>
     );
   }
 
-  Widget _buildVehicleTypesList() {
+  Widget _buildVehicleTypesList(ThemeData theme) {
     final vehicleTypes = widget.catalogController.vehicleTypes;
-    final colorScheme = Theme.of(context).colorScheme;
+    final colorScheme = theme.colorScheme;
 
     if (vehicleTypes.isEmpty) {
       return Center(
         child: Padding(
-          padding: const EdgeInsets.all(40),
+          padding: const EdgeInsets.all(AppSpacing.spacing40),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Container(
-                padding: const EdgeInsets.all(24),
+                padding: const EdgeInsets.all(AppSpacing.spacing24),
                 decoration: BoxDecoration(
                   color: colorScheme.surfaceVariant.withOpacity(0.5),
                   shape: BoxShape.circle,
@@ -539,23 +487,22 @@ class _AdminCatalogPageState extends State<AdminCatalogPage>
                 child: Icon(
                   Icons.directions_car_outlined,
                   size: 64,
-                  color: colorScheme.onSurfaceVariant.withOpacity(0.5),
+                  color:
+                      colorScheme.onSurfaceVariant.withOpacity(0.5),
                 ),
               ),
-              const SizedBox(height: 24),
+              const SizedBox(height: AppSpacing.spacing24),
               Text(
-                'No hay tipos de vehículos',
-                style: GoogleFonts.dmSans(
-                  fontSize: 20,
+                'No hay tipos de vehiculos',
+                style: theme.textTheme.titleLarge?.copyWith(
                   fontWeight: FontWeight.bold,
                   color: colorScheme.onSurface,
                 ),
               ),
-              const SizedBox(height: 8),
+              const SizedBox(height: AppSpacing.spacing8),
               Text(
-                'Crea el primer tipo usando el botón inferior',
-                style: GoogleFonts.dmSans(
-                  fontSize: 14,
+                'Crea el primer tipo usando el boton inferior',
+                style: theme.textTheme.bodyMedium?.copyWith(
                   color: colorScheme.onSurfaceVariant,
                 ),
                 textAlign: TextAlign.center,
@@ -567,9 +514,10 @@ class _AdminCatalogPageState extends State<AdminCatalogPage>
     }
 
     return ListView.separated(
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.all(AppSpacing.spacing20),
       itemCount: vehicleTypes.length,
-      separatorBuilder: (_, __) => const SizedBox(height: 12),
+      separatorBuilder: (_, __) =>
+          const SizedBox(height: AppSpacing.spacing12),
       itemBuilder: (context, index) {
         final vehicleType = vehicleTypes[index];
         return TweenAnimationBuilder<double>(
@@ -586,7 +534,7 @@ class _AdminCatalogPageState extends State<AdminCatalogPage>
             );
           },
           child: Container(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.all(AppSpacing.spacing16),
             decoration: BoxDecoration(
               color: colorScheme.surface,
               borderRadius: BorderRadius.circular(16),
@@ -609,7 +557,8 @@ class _AdminCatalogPageState extends State<AdminCatalogPage>
                     gradient: LinearGradient(
                       colors: [
                         colorScheme.primaryContainer,
-                        colorScheme.primaryContainer.withOpacity(0.6),
+                        colorScheme.primaryContainer
+                            .withOpacity(0.6),
                       ],
                     ),
                     borderRadius: BorderRadius.circular(12),
@@ -627,8 +576,7 @@ class _AdminCatalogPageState extends State<AdminCatalogPage>
                     children: [
                       Text(
                         vehicleType.name,
-                        style: GoogleFonts.dmSans(
-                          fontSize: 16,
+                        style: theme.textTheme.titleMedium?.copyWith(
                           fontWeight: FontWeight.bold,
                           color: colorScheme.onSurface,
                         ),
@@ -636,8 +584,7 @@ class _AdminCatalogPageState extends State<AdminCatalogPage>
                       const SizedBox(height: 2),
                       Text(
                         'ID: ${vehicleType.id}',
-                        style: GoogleFonts.dmSans(
-                          fontSize: 12,
+                        style: theme.textTheme.bodySmall?.copyWith(
                           color: colorScheme.onSurfaceVariant,
                         ),
                       ),
@@ -645,7 +592,8 @@ class _AdminCatalogPageState extends State<AdminCatalogPage>
                   ),
                 ),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: 12, vertical: 6),
                   decoration: BoxDecoration(
                     color: Colors.blue[50],
                     borderRadius: BorderRadius.circular(20),
@@ -653,8 +601,7 @@ class _AdminCatalogPageState extends State<AdminCatalogPage>
                   ),
                   child: Text(
                     'Activo',
-                    style: GoogleFonts.dmSans(
-                      fontSize: 11,
+                    style: theme.textTheme.labelSmall?.copyWith(
                       fontWeight: FontWeight.w600,
                       color: Colors.blue[700],
                     ),
@@ -668,19 +615,19 @@ class _AdminCatalogPageState extends State<AdminCatalogPage>
     );
   }
 
-  Widget _buildWashedTypesList() {
+  Widget _buildWashedTypesList(ThemeData theme) {
     final washedTypes = widget.catalogController.washedTypes;
-    final colorScheme = Theme.of(context).colorScheme;
+    final colorScheme = theme.colorScheme;
 
     if (washedTypes.isEmpty) {
       return Center(
         child: Padding(
-          padding: const EdgeInsets.all(40),
+          padding: const EdgeInsets.all(AppSpacing.spacing40),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Container(
-                padding: const EdgeInsets.all(24),
+                padding: const EdgeInsets.all(AppSpacing.spacing24),
                 decoration: BoxDecoration(
                   color: colorScheme.surfaceVariant.withOpacity(0.5),
                   shape: BoxShape.circle,
@@ -688,25 +635,24 @@ class _AdminCatalogPageState extends State<AdminCatalogPage>
                 child: Icon(
                   Icons.local_car_wash_outlined,
                   size: 64,
-                  color: colorScheme.onSurfaceVariant.withOpacity(0.5),
+                  color:
+                      colorScheme.onSurfaceVariant.withOpacity(0.5),
                 ),
               ),
-              const SizedBox(height: 24),
+              const SizedBox(height: AppSpacing.spacing24),
               Text(
                 'No hay tipos de lavado',
-                style: GoogleFonts.dmSans(
-                  fontSize: 20,
+                style: theme.textTheme.titleLarge?.copyWith(
                   fontWeight: FontWeight.bold,
                   color: colorScheme.onSurface,
                 ),
               ),
-              const SizedBox(height: 8),
+              const SizedBox(height: AppSpacing.spacing8),
               Text(
                 widget.catalogController.vehicleTypes.isEmpty
-                    ? 'Primero debes crear tipos de vehículos'
-                    : 'Crea el primer tipo usando el botón inferior',
-                style: GoogleFonts.dmSans(
-                  fontSize: 14,
+                    ? 'Primero debes crear tipos de vehiculos'
+                    : 'Crea el primer tipo usando el boton inferior',
+                style: theme.textTheme.bodyMedium?.copyWith(
                   color: colorScheme.onSurfaceVariant,
                 ),
                 textAlign: TextAlign.center,
@@ -718,9 +664,10 @@ class _AdminCatalogPageState extends State<AdminCatalogPage>
     }
 
     return ListView.separated(
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.all(AppSpacing.spacing20),
       itemCount: washedTypes.length,
-      separatorBuilder: (_, __) => const SizedBox(height: 12),
+      separatorBuilder: (_, __) =>
+          const SizedBox(height: AppSpacing.spacing12),
       itemBuilder: (context, index) {
         final washedType = washedTypes[index];
         return TweenAnimationBuilder<double>(
@@ -737,7 +684,7 @@ class _AdminCatalogPageState extends State<AdminCatalogPage>
             );
           },
           child: Container(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.all(AppSpacing.spacing16),
             decoration: BoxDecoration(
               color: colorScheme.surface,
               borderRadius: BorderRadius.circular(16),
@@ -763,7 +710,8 @@ class _AdminCatalogPageState extends State<AdminCatalogPage>
                         gradient: LinearGradient(
                           colors: [
                             colorScheme.secondaryContainer,
-                            colorScheme.secondaryContainer.withOpacity(0.6),
+                            colorScheme.secondaryContainer
+                                .withOpacity(0.6),
                           ],
                         ),
                         borderRadius: BorderRadius.circular(12),
@@ -777,12 +725,13 @@ class _AdminCatalogPageState extends State<AdminCatalogPage>
                     const SizedBox(width: 14),
                     Expanded(
                       child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
+                        crossAxisAlignment:
+                            CrossAxisAlignment.start,
                         children: [
                           Text(
                             washedType.name,
-                            style: GoogleFonts.dmSans(
-                              fontSize: 16,
+                            style: theme.textTheme.titleMedium
+                                ?.copyWith(
                               fontWeight: FontWeight.bold,
                               color: colorScheme.onSurface,
                             ),
@@ -790,9 +739,10 @@ class _AdminCatalogPageState extends State<AdminCatalogPage>
                           const SizedBox(height: 2),
                           Text(
                             washedType.vehicleTypeName ?? 'N/A',
-                            style: GoogleFonts.dmSans(
-                              fontSize: 13,
-                              color: colorScheme.onSurfaceVariant,
+                            style: theme.textTheme.bodySmall
+                                ?.copyWith(
+                              color:
+                                  colorScheme.onSurfaceVariant,
                             ),
                           ),
                         ],
@@ -806,7 +756,8 @@ class _AdminCatalogPageState extends State<AdminCatalogPage>
                       decoration: BoxDecoration(
                         color: Colors.green[50],
                         borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: Colors.green[300]!),
+                        border: Border.all(
+                            color: Colors.green[300]!),
                       ),
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
@@ -819,8 +770,8 @@ class _AdminCatalogPageState extends State<AdminCatalogPage>
                           const SizedBox(width: 4),
                           Text(
                             washedType.formattedPrice,
-                            style: GoogleFonts.dmSans(
-                              fontSize: 14,
+                            style: theme.textTheme.bodyMedium
+                                ?.copyWith(
                               fontWeight: FontWeight.bold,
                               color: Colors.green[700],
                             ),

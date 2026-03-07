@@ -1,15 +1,15 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
+import 'package:core_ui/core_ui.dart';
 import '../models/appointment_model.dart';
 
-/// Widget de tarjeta para mostrar una cita con diseño profesional.
+/// Widget de tarjeta para mostrar una cita con diseno profesional.
 class AppointmentCard extends StatelessWidget {
   final AppointmentModel appointment;
   final bool isAdmin;
   final VoidCallback? onTap;
   final VoidCallback? onEdit;
   final Function(AppointmentStatus)? onStatusChange;
-  final VoidCallback? onPrintInvoice; // Nuevo: para imprimir factura
+  final VoidCallback? onPrintInvoice;
 
   const AppointmentCard({
     Key? key,
@@ -24,6 +24,7 @@ class AppointmentCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
+    final theme = Theme.of(context);
     final isPaid = appointment.isPaid;
 
     return Material(
@@ -32,7 +33,7 @@ class AppointmentCard extends StatelessWidget {
         onTap: onTap,
         borderRadius: BorderRadius.circular(20),
         child: Container(
-          padding: const EdgeInsets.all(20),
+          padding: const EdgeInsets.all(AppSpacing.spacing20),
           decoration: BoxDecoration(
             color: colorScheme.surface,
             borderRadius: BorderRadius.circular(20),
@@ -51,25 +52,25 @@ class AppointmentCard extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              _buildHeader(context, colorScheme, isPaid),
-              const SizedBox(height: 16),
-              _buildDateTimeRow(context, colorScheme),
+              _buildHeader(context, colorScheme, theme, isPaid),
+              const SizedBox(height: AppSpacing.spacing16),
+              _buildDateTimeRow(context, colorScheme, theme),
               if (appointment.washedTypePrice != null) ...[
-                const SizedBox(height: 12),
-                _buildPriceRow(context, colorScheme),
+                const SizedBox(height: AppSpacing.spacing12),
+                _buildPriceRow(context, colorScheme, theme),
               ],
               if (isAdmin && appointment.userName != null) ...[
-                const SizedBox(height: 12),
-                _buildClientRow(context, colorScheme),
+                const SizedBox(height: AppSpacing.spacing12),
+                _buildClientRow(context, colorScheme, theme),
               ],
               if (isAdmin) ...[
-                const SizedBox(height: 16),
+                const SizedBox(height: AppSpacing.spacing16),
                 Divider(
                   color: colorScheme.outlineVariant.withOpacity(0.3),
                   height: 1,
                 ),
-                const SizedBox(height: 16),
-                _buildActionButtons(context, colorScheme, isPaid),
+                const SizedBox(height: AppSpacing.spacing16),
+                _buildActionButtons(context, colorScheme, theme, isPaid),
               ],
             ],
           ),
@@ -78,7 +79,8 @@ class AppointmentCard extends StatelessWidget {
     );
   }
 
-  Widget _buildHeader(BuildContext context, ColorScheme colorScheme, bool isPaid) {
+  Widget _buildHeader(
+      BuildContext context, ColorScheme colorScheme, ThemeData theme, bool isPaid) {
     return Row(
       children: [
         Container(
@@ -92,7 +94,8 @@ class AppointmentCard extends StatelessWidget {
             borderRadius: BorderRadius.circular(14),
             boxShadow: [
               BoxShadow(
-                color: (isPaid ? Colors.green : Colors.orange).withOpacity(0.3),
+                color:
+                    (isPaid ? Colors.green : Colors.orange).withOpacity(0.3),
                 blurRadius: 8,
                 offset: const Offset(0, 2),
               ),
@@ -111,8 +114,7 @@ class AppointmentCard extends StatelessWidget {
             children: [
               Text(
                 appointment.washedTypeName ?? 'Lavado',
-                style: GoogleFonts.dmSans(
-                  fontSize: 16,
+                style: theme.textTheme.titleMedium?.copyWith(
                   fontWeight: FontWeight.bold,
                   color: colorScheme.onSurface,
                 ),
@@ -121,8 +123,7 @@ class AppointmentCard extends StatelessWidget {
                 const SizedBox(height: 2),
                 Text(
                   appointment.vehicleTypeName!,
-                  style: GoogleFonts.dmSans(
-                    fontSize: 13,
+                  style: theme.textTheme.bodySmall?.copyWith(
                     color: colorScheme.onSurfaceVariant,
                   ),
                 ),
@@ -131,20 +132,22 @@ class AppointmentCard extends StatelessWidget {
           ),
         ),
         Container(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+          padding:
+              const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
           decoration: BoxDecoration(
-            color: (isPaid ? Colors.green : Colors.orange).withOpacity(0.12),
+            color:
+                (isPaid ? Colors.green : Colors.orange).withOpacity(0.12),
             borderRadius: BorderRadius.circular(20),
             border: Border.all(
-              color: (isPaid ? Colors.green[600] : Colors.orange[600])!,
+              color:
+                  (isPaid ? Colors.green[600] : Colors.orange[600])!,
               width: 1.5,
             ),
           ),
           child: Text(
             appointment.status.displayName,
-            style: GoogleFonts.dmSans(
+            style: theme.textTheme.labelSmall?.copyWith(
               color: isPaid ? Colors.green[700] : Colors.orange[700],
-              fontSize: 11,
               fontWeight: FontWeight.w600,
               letterSpacing: 0.3,
             ),
@@ -154,7 +157,8 @@ class AppointmentCard extends StatelessWidget {
     );
   }
 
-  Widget _buildDateTimeRow(BuildContext context, ColorScheme colorScheme) {
+  Widget _buildDateTimeRow(
+      BuildContext context, ColorScheme colorScheme, ThemeData theme) {
     return Row(
       children: [
         Expanded(
@@ -162,14 +166,16 @@ class AppointmentCard extends StatelessWidget {
             icon: Icons.calendar_today_rounded,
             label: appointment.formattedDate,
             colorScheme: colorScheme,
+            theme: theme,
           ),
         ),
-        const SizedBox(width: 8),
+        const SizedBox(width: AppSpacing.spacing8),
         Expanded(
           child: _buildInfoChip(
             icon: Icons.access_time_rounded,
             label: appointment.appointmentTime,
             colorScheme: colorScheme,
+            theme: theme,
           ),
         ),
       ],
@@ -180,9 +186,11 @@ class AppointmentCard extends StatelessWidget {
     required IconData icon,
     required String label,
     required ColorScheme colorScheme,
+    required ThemeData theme,
   }) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+      padding: const EdgeInsets.symmetric(
+          horizontal: AppSpacing.spacing12, vertical: 10),
       decoration: BoxDecoration(
         color: colorScheme.surfaceVariant.withOpacity(0.5),
         borderRadius: BorderRadius.circular(12),
@@ -195,12 +203,11 @@ class AppointmentCard extends StatelessWidget {
             size: 16,
             color: colorScheme.primary,
           ),
-          const SizedBox(width: 8),
+          const SizedBox(width: AppSpacing.spacing8),
           Flexible(
             child: Text(
               label,
-              style: GoogleFonts.dmSans(
-                fontSize: 13,
+              style: theme.textTheme.bodySmall?.copyWith(
                 fontWeight: FontWeight.w500,
                 color: colorScheme.onSurface,
               ),
@@ -212,9 +219,10 @@ class AppointmentCard extends StatelessWidget {
     );
   }
 
-  Widget _buildPriceRow(BuildContext context, ColorScheme colorScheme) {
+  Widget _buildPriceRow(
+      BuildContext context, ColorScheme colorScheme, ThemeData theme) {
     return Container(
-      padding: const EdgeInsets.all(12),
+      padding: const EdgeInsets.all(AppSpacing.spacing12),
       decoration: BoxDecoration(
         color: Colors.green[50],
         borderRadius: BorderRadius.circular(12),
@@ -231,11 +239,10 @@ class AppointmentCard extends StatelessWidget {
             size: 18,
             color: Colors.green[700],
           ),
-          const SizedBox(width: 8),
+          const SizedBox(width: AppSpacing.spacing8),
           Text(
             appointment.formattedPrice!,
-            style: GoogleFonts.dmSans(
-              fontSize: 16,
+            style: theme.textTheme.titleMedium?.copyWith(
               fontWeight: FontWeight.bold,
               color: Colors.green[700],
             ),
@@ -245,9 +252,11 @@ class AppointmentCard extends StatelessWidget {
     );
   }
 
-  Widget _buildClientRow(BuildContext context, ColorScheme colorScheme) {
+  Widget _buildClientRow(
+      BuildContext context, ColorScheme colorScheme, ThemeData theme) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+      padding: const EdgeInsets.symmetric(
+          horizontal: AppSpacing.spacing12, vertical: 10),
       decoration: BoxDecoration(
         color: colorScheme.primaryContainer.withOpacity(0.3),
         borderRadius: BorderRadius.circular(12),
@@ -260,11 +269,10 @@ class AppointmentCard extends StatelessWidget {
             size: 16,
             color: colorScheme.primary,
           ),
-          const SizedBox(width: 8),
+          const SizedBox(width: AppSpacing.spacing8),
           Text(
             appointment.userName!,
-            style: GoogleFonts.dmSans(
-              fontSize: 13,
+            style: theme.textTheme.bodySmall?.copyWith(
               fontWeight: FontWeight.w500,
               color: colorScheme.onSurface,
             ),
@@ -275,11 +283,10 @@ class AppointmentCard extends StatelessWidget {
   }
 
   Widget _buildActionButtons(
-      BuildContext context, ColorScheme colorScheme, bool isPaid) {
+      BuildContext context, ColorScheme colorScheme, ThemeData theme, bool isPaid) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        // Fila principal: Cambiar estado + Editar
         Row(
           children: [
             if (onStatusChange != null)
@@ -292,30 +299,37 @@ class AppointmentCard extends StatelessWidget {
                     onStatusChange!(newStatus);
                   },
                   icon: Icon(
-                    isPaid ? Icons.cancel_rounded : Icons.check_circle_rounded,
+                    isPaid
+                        ? Icons.cancel_rounded
+                        : Icons.check_circle_rounded,
                     size: 18,
                   ),
                   label: Text(
                     isPaid ? 'Sin Pagar' : 'Pagado',
-                    style: GoogleFonts.dmSans(
-                      fontSize: 13,
+                    style: theme.textTheme.bodySmall?.copyWith(
                       fontWeight: FontWeight.w600,
                     ),
                   ),
                   style: OutlinedButton.styleFrom(
-                    foregroundColor: isPaid ? Colors.orange[700] : Colors.green[700],
+                    foregroundColor:
+                        isPaid ? Colors.orange[700] : Colors.green[700],
                     side: BorderSide(
-                      color: (isPaid ? Colors.orange[300] : Colors.green[300])!,
+                      color: (isPaid
+                              ? Colors.orange[300]
+                              : Colors.green[300])!,
                       width: 1.5,
                     ),
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: AppSpacing.spacing16,
+                        vertical: AppSpacing.spacing12),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12),
                     ),
                   ),
                 ),
               ),
-            if (onStatusChange != null && onEdit != null) const SizedBox(width: 8),
+            if (onStatusChange != null && onEdit != null)
+              const SizedBox(width: AppSpacing.spacing8),
             if (onEdit != null)
               Expanded(
                 child: FilledButton.icon(
@@ -323,13 +337,14 @@ class AppointmentCard extends StatelessWidget {
                   icon: const Icon(Icons.edit_rounded, size: 18),
                   label: Text(
                     'Editar',
-                    style: GoogleFonts.dmSans(
-                      fontSize: 13,
+                    style: theme.textTheme.bodySmall?.copyWith(
                       fontWeight: FontWeight.w600,
                     ),
                   ),
                   style: FilledButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: AppSpacing.spacing16,
+                        vertical: AppSpacing.spacing12),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12),
                     ),
@@ -338,22 +353,22 @@ class AppointmentCard extends StatelessWidget {
               ),
           ],
         ),
-        // Botón de imprimir factura (solo si está pagada y hay callback)
         if (isPaid && onPrintInvoice != null) ...[
-          const SizedBox(height: 8),
+          const SizedBox(height: AppSpacing.spacing8),
           FilledButton.icon(
             onPressed: onPrintInvoice,
             icon: const Icon(Icons.print_rounded, size: 18),
             label: Text(
               'Imprimir Factura',
-              style: GoogleFonts.dmSans(
-                fontSize: 13,
+              style: theme.textTheme.bodySmall?.copyWith(
                 fontWeight: FontWeight.w600,
               ),
             ),
             style: FilledButton.styleFrom(
               backgroundColor: Colors.blue[600],
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              padding: const EdgeInsets.symmetric(
+                  horizontal: AppSpacing.spacing16,
+                  vertical: AppSpacing.spacing12),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(12),
               ),
