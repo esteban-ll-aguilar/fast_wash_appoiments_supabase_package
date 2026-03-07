@@ -1,9 +1,12 @@
+import 'document_type.dart';
+
 /// Modelo de usuario que corresponde a la tabla 'users' en Supabase.
 /// 
 /// Representa un usuario del sistema con sus datos personales y rol.
 class UserModel {
   final String id; // UUID del usuario en auth.users
   final String? dni; // DNI único del usuario
+  final DocumentType documentType;
   final String email;
   final UserRole role;
   final String? firstName;
@@ -14,6 +17,7 @@ class UserModel {
   UserModel({
     required this.id,
     this.dni,
+    this.documentType = DocumentType.cedula,
     required this.email,
     required this.role,
     this.firstName,
@@ -27,6 +31,7 @@ class UserModel {
     return UserModel(
       id: json['id'] as String,
       dni: json['dni'] as String?,
+      documentType: DocumentType.fromDb(json['document_type'] as String?),
       email: json['email'] as String,
       role: UserRole.values.firstWhere(
         (e) => e.name.toUpperCase() == (json['role'] as String).toUpperCase(),
@@ -44,6 +49,7 @@ class UserModel {
     return {
       'id': id,
       'dni': dni,
+      'document_type': documentType.dbValue,
       'email': email,
       'role': role.name.toUpperCase(),
       'first_name': firstName,
@@ -77,6 +83,7 @@ class UserModel {
   UserModel copyWith({
     String? id,
     String? dni,
+    DocumentType? documentType,
     String? email,
     UserRole? role,
     String? firstName,
@@ -87,6 +94,7 @@ class UserModel {
     return UserModel(
       id: id ?? this.id,
       dni: dni ?? this.dni,
+      documentType: documentType ?? this.documentType,
       email: email ?? this.email,
       role: role ?? this.role,
       firstName: firstName ?? this.firstName,

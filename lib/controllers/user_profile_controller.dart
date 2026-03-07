@@ -1,4 +1,5 @@
 import 'package:flutter/foundation.dart';
+import '../models/document_type.dart';
 import '../models/user_model.dart';
 import '../services/user_service.dart';
 
@@ -82,6 +83,7 @@ class UserProfileController extends ChangeNotifier {
     String? dni,
     String? firstName,
     String? lastName,
+    DocumentType? documentType,
   }) async {
     try {
       _status = UserProfileStatus.loading;
@@ -92,6 +94,7 @@ class UserProfileController extends ChangeNotifier {
         dni: dni,
         firstName: firstName,
         lastName: lastName,
+        documentType: documentType,
       );
 
       if (_currentUser!.isProfileComplete) {

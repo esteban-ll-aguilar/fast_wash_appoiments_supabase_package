@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../controllers/user_profile_controller.dart';
+import '../models/document_type.dart';
 import '../utils/validators.dart';
 
 /// Página para completar el perfil del usuario con diseño profesional.
-/// 
+///
 /// Fuerza al usuario a ingresar su DNI, nombre y apellido
 /// antes de poder usar otras funcionalidades del sistema.
 class CompleteProfilePage extends StatefulWidget {
@@ -30,6 +31,7 @@ class _CompleteProfilePageState extends State<CompleteProfilePage>
   late AnimationController _animationController;
   late Animation<double> _fadeAnimation;
   late Animation<Offset> _slideAnimation;
+  DocumentType _selectedType = DocumentType.cedula;
 
   @override
   void initState() {
@@ -57,6 +59,10 @@ class _CompleteProfilePageState extends State<CompleteProfilePage>
       _lastNameController.text = widget.controller.currentUser!.lastName ?? '';
     }
 
+    if (widget.controller.currentUser != null) {
+      _selectedType = widget.controller.currentUser!.documentType;
+    }
+
     _animationController.forward();
   }
 
@@ -76,6 +82,7 @@ class _CompleteProfilePageState extends State<CompleteProfilePage>
       dni: _dniController.text.trim(),
       firstName: _firstNameController.text.trim(),
       lastName: _lastNameController.text.trim(),
+      documentType: _selectedType,
     );
 
     if (!mounted) return;
@@ -217,12 +224,42 @@ class _CompleteProfilePageState extends State<CompleteProfilePage>
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
+            SegmentedButton<DocumentType>(
+              segments: const [
+                ButtonSegment(
+                  value: DocumentType.cedula,
+                  label: Text('Cédula'),
+                  icon: Icon(Icons.badge_rounded),
+                ),
+                ButtonSegment(
+                  value: DocumentType.ruc,
+                  label: Text('RUC'),
+                  icon: Icon(Icons.business_rounded),
+                ),
+              ],
+              selected: {_selectedType},
+              onSelectionChanged: (value) {
+                setState(() {
+                  _selectedType = value.first;
+                  _dniController.clear();
+                });
+              },
+              style: SegmentedButton.styleFrom(
+                selectedBackgroundColor: colorScheme.primary,
+                selectedForegroundColor: colorScheme.onPrimary,
+              ),
+            ),
+            const SizedBox(height: 16),
             TextFormField(
               controller: _dniController,
               decoration: InputDecoration(
-                labelText: 'Cédula de Identidad',
+                labelText: _selectedType == DocumentType.cedula
+                    ? 'Cédula de Identidad'
+                    : 'RUC',
                 labelStyle: GoogleFonts.dmSans(),
-                hintText: '1234567890',
+                hintText: _selectedType == DocumentType.cedula
+                    ? '1234567890'
+                    : '1234567890001',
                 hintStyle: GoogleFonts.dmSans(
                   color: colorScheme.onSurfaceVariant.withOpacity(0.5),
                 ),
@@ -237,8 +274,9 @@ class _CompleteProfilePageState extends State<CompleteProfilePage>
               ),
               style: GoogleFonts.dmSans(fontSize: 15),
               keyboardType: TextInputType.number,
-              maxLength: 10,
-              validator: DniValidator.validateDni,
+              maxLength: _selectedType == DocumentType.cedula ? 10 : 13,
+              validator: (value) =>
+                  DniValidator.validateDocument(value, _selectedType),
             ),
             const SizedBox(height: 16),
             TextFormField(
@@ -347,7 +385,9 @@ class _CompleteProfilePageState extends State<CompleteProfilePage>
           const SizedBox(width: 12),
           Expanded(
             child: Text(
-              'La cédula debe ser ecuatoriana y será validada.',
+              _selectedType == DocumentType.cedula
+                  ? 'La cédula debe ser ecuatoriana (10 dígitos) y será validada.'
+                  : 'El RUC debe ser ecuatoriano (13 dígitos) y será validado.',
               style: GoogleFonts.dmSans(
                 color: Colors.orange[900],
                 fontSize: 13,

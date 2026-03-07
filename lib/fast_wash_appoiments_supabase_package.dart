@@ -40,6 +40,7 @@ export 'models/user_model.dart';
 export 'models/vehicle_type_model.dart';
 export 'models/washed_type_model.dart';
 export 'models/appointment_model.dart';
+export 'models/document_type.dart';
 
 // Services
 export 'services/user_service.dart';

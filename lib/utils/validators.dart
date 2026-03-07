@@ -1,3 +1,5 @@
+import '../models/document_type.dart';
+
 /// Utilidades para validar cédulas ecuatorianas.
 /// 
 /// Implementa el algoritmo oficial de validación de cédulas de identidad de Ecuador.
@@ -101,6 +103,91 @@ class DniValidator {
   /// Ejemplo: "123-456-7890" -> "1234567890"
   static String unformatDni(String dni) {
     return dni.replaceAll(RegExp(r'[^0-9]'), '');
+  }
+
+  /// Valida que un RUC ecuatoriano sea correcto.
+  ///
+  /// Tipos de RUC:
+  /// - Persona natural: 3er dígito 0-5, módulo 10, termina en 001
+  /// - Sociedad privada: 3er dígito 9, módulo 11, coeficientes [4,3,2,7,6,5,4,3,2]
+  /// - Sociedad pública: 3er dígito 6, módulo 11, coeficientes [3,2,7,6,5,4,3,2]
+  static bool isValidEcuadorianRuc(String ruc) {
+    if (ruc.length != 13) return false;
+    if (!RegExp(r'^\d+$').hasMatch(ruc)) return false;
+
+    // Código de provincia (01-24) o 30 (extranjeros)
+    final province = int.parse(ruc.substring(0, 2));
+    if (province < 1 || (province > 24 && province != 30)) return false;
+
+    final thirdDigit = int.parse(ruc[2]);
+    final establishment = ruc.substring(10);
+
+    // El establecimiento debe ser >= 001
+    if (int.parse(establishment) < 1) return false;
+
+    if (thirdDigit >= 0 && thirdDigit <= 5) {
+      // Persona natural: primeros 10 dígitos = cédula válida, últimos 3 = 001
+      return isValidEcuadorianDni(ruc.substring(0, 10)) && establishment == '001';
+    } else if (thirdDigit == 6) {
+      // Sociedad pública: módulo 11 con coeficientes [3,2,7,6,5,4,3,2]
+      return _validateMod11(ruc, [3, 2, 7, 6, 5, 4, 3, 2], 8);
+    } else if (thirdDigit == 9) {
+      // Sociedad privada: módulo 11 con coeficientes [4,3,2,7,6,5,4,3,2]
+      return _validateMod11(ruc, [4, 3, 2, 7, 6, 5, 4, 3, 2], 9);
+    }
+
+    return false;
+  }
+
+  /// Validación módulo 11 para RUC de sociedades.
+  static bool _validateMod11(String ruc, List<int> coefficients, int verifierIndex) {
+    int sum = 0;
+    for (int i = 0; i < coefficients.length; i++) {
+      sum += int.parse(ruc[i]) * coefficients[i];
+    }
+    final remainder = sum % 11;
+    final verifier = remainder == 0 ? 0 : 11 - remainder;
+    return verifier == int.parse(ruc[verifierIndex]);
+  }
+
+  /// Valida el RUC para usar en formularios Flutter.
+  static String? validateRuc(String? value) {
+    if (value == null || value.trim().isEmpty) {
+      return 'El RUC es requerido';
+    }
+
+    final ruc = value.trim();
+
+    if (ruc.length != 13) {
+      return 'El RUC debe tener 13 dígitos';
+    }
+
+    if (!RegExp(r'^\d+$').hasMatch(ruc)) {
+      return 'El RUC solo debe contener números';
+    }
+
+    if (!isValidEcuadorianRuc(ruc)) {
+      return 'RUC ecuatoriano inválido';
+    }
+
+    return null;
+  }
+
+  /// Validador unificado según tipo de documento.
+  static String? validateDocument(String? value, DocumentType type) {
+    switch (type) {
+      case DocumentType.cedula:
+        return validateDni(value);
+      case DocumentType.ruc:
+        return validateRuc(value);
+    }
+  }
+
+  /// Formatea un RUC para mejor legibilidad.
+  /// Ejemplo: "1234567890001" -> "1234567890-001"
+  static String formatRuc(String ruc) {
+    if (ruc.length != 13) return ruc;
+    return '${ruc.substring(0, 10)}-${ruc.substring(10)}';
   }
 }
 

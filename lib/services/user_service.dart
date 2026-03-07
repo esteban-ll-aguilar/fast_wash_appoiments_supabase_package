@@ -1,4 +1,5 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
+import '../models/document_type.dart';
 import '../models/user_model.dart';
 
 /// Servicio para gestionar operaciones relacionadas con usuarios en Supabase.
@@ -67,6 +68,7 @@ class UserService {
     String? dni,
     String? firstName,
     String? lastName,
+    DocumentType? documentType,
   }) async {
     try {
       final user = _client.auth.currentUser;
@@ -81,6 +83,7 @@ class UserService {
       if (dni != null) updateData['dni'] = dni;
       if (firstName != null) updateData['first_name'] = firstName;
       if (lastName != null) updateData['last_name'] = lastName;
+      if (documentType != null) updateData['document_type'] = documentType.dbValue;
 
       final response = await _client
           .from('users')
